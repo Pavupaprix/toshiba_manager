@@ -1,0 +1,27 @@
+# Données runtime — remplacées par le volume nommé toshiba_data
+uploads/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Captures d'écran / images de travail non nécessaires à l'image
+Capture d'écran*
+Sans titre.png
+
+# VCS / éditeurs
+.git/
+.gitignore
+.vscode/
+.idea/
+*.log
+*.tmp
+
+# Fichiers de packaging non nécessaires dans l'image elle-même
+docker-compose.yml
+.env
+.env.example
+README.md

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carnet d'adresse — Toshiba Scan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>(function(){var t=localStorage.getItem('ts-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+</head>
+<body>
+    <div class="topbar">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Basculer le thème">
+            <span class="icon-moon">🌙</span>
+            <span class="icon-sun">☀️</span>
+        </button>
+        <a href="{{ url_for('download_bat') }}" download="Toshiba+Partage.bat" class="topbar-logo-link" title="Télécharger Toshiba+Partage.bat">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Toshiba Scan" class="topbar-logo">
+        </a>
+        <span class="topbar-spacer"></span>
+        <div class="topbar-brand">
+            <img src="{{ url_for('static', filename='omb-logo.jpg') }}" alt="OMB Informatique" class="topbar-brand-logo">
+            <span class="topbar-brand-name">OMB&nbsp;<span class="topbar-brand-accent">INFORMATIQUE</span></span>
+        </div>
+    </div>
+    <div class="container smtp-page">
+        <a class="hub-back-btn" href="{{ url_for('hub') }}"><span aria-hidden="true">🏠</span> HUB</a>
+
+        <header class="smtp-header">
+            <div class="smtp-kicker">Paramétrage Copieur Topaccess</div>
+            <h1>Carnet <span class="accent">d'adresse</span></h1>
+            <p class="smtp-subtitle">Générez un CSV conforme pour l'importer dans le copieur.</p>
+        </header>
+
+        <section class="smtp-card ab-card">
+            <div class="smtp-card-heading">
+                <span class="smtp-card-icon" aria-hidden="true">📇</span>
+                <div>
+                    <p class="smtp-eyebrow">Carnet d'adresses</p>
+                    <h2>CSV pour le copieur</h2>
+                </div>
+            </div>
+
+            <div id="abDropzone" class="ab-dropzone" tabindex="0" role="button" aria-label="Importer un fichier Excel">
+                <span class="ab-dropzone-icon">📥</span>
+                <p class="ab-dropzone-title">Glissez votre Excel client ici</p>
+                <p class="ab-dropzone-sub">ou cliquez pour parcourir — .xlsx, .xls, .csv</p>
+                <input type="file" id="abFile" accept=".xlsx,.xls,.csv" hidden>
+            </div>
+
+            <div id="abBody" class="ab-body" hidden>
+                <div class="ab-feedback" id="abFeedback" hidden></div>
+
+                <div class="ab-mapping">
+                    <div class="form-group">
+                        <label>📧 Adresse e-mail</label>
+                        <select id="mapEmail"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>👤 Nom</label>
+                        <select id="mapLast"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>🧑 Prénom</label>
+                        <select id="mapFirst"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>🏢 Société</label>
+                        <select id="mapCompany"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>🏬 Département / Service</label>
+                        <select id="mapDept"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>📞 Téléphone</label>
+                        <select id="mapPhone"></select>
+                    </div>
+                </div>
+
+                <div class="ab-split-row">
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="abCombined"> Nom et prénom dans la même case</label>
+                    </div>
+                    <div class="form-group ab-order" id="abOrderWrap" hidden>
+                        <label for="abOrder">Sens du nom et prénom</label>
+                        <select id="abOrder">
+                            <option value="auto" selected>Détection automatique</option>
+                            <option value="last_first">DUPONT Jean (Nom Prénom)</option>
+                            <option value="first_last">Jean DUPONT (Prénom Nom)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="ab-preview-wrap">
+                    <div class="ab-preview-head">
+                        <h3>Aperçu</h3>
+                        <span class="ab-count" id="abCount"></span>
+                    </div>
+                    <div class="ab-preview-scroll">
+                        <table class="ab-preview">
+                            <thead>
+                                <tr>
+                                    <th>Prénom</th>
+                                    <th>Nom</th>
+                                    <th>E-mail</th>
+                                    <th>Société</th>
+                                    <th>Téléphone</th>
+                                </tr>
+                            </thead>
+                            <tbody id="abPreviewBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="smtp-buttons">
+                    <button class="btn btn-primary" id="abGenerate">⚙️ Générer le CSV</button>
+                </div>
+            </div>
+
+            <div id="abResult" class="ab-result" hidden></div>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='addressbook.js') }}"></script>
+    <script>document.getElementById('themeToggle').addEventListener('click',function(){var cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',cur);localStorage.setItem('ts-theme',cur);});</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Reverse proxy M2 — exposition publique de ToshibaManager (FR-010 à FR-012).
+# Caddy gère automatiquement le certificat TLS (Let's Encrypt) pour le
+# domaine configuré, redirige HTTP -> HTTPS, et exige une authentification
+# HTTP Basic avant de transmettre toute requête à l'application (FR-011).
+#
+# Variables fournies via .env (voir ToshibaManager 1/ToshibaManager/.env.example) :
+#   DOMAIN                  nom de domaine public (ex. toshiba.exemple.fr)
+#   BASIC_AUTH_USER         identifiant partagé
+#   BASIC_AUTH_PASSWORD_HASH  hash bcrypt du mot de passe (généré avec
+#                              `docker run --rm caddy:2-alpine caddy hash-password`)
+
+{$DOMAIN} {
+	basic_auth {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_PASSWORD_HASH}
+	}
+
+	reverse_proxy app:5000
+}

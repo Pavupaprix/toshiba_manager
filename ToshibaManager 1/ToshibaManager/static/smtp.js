@@ -1,0 +1,13 @@
+(() => {
+const $ = id => document.getElementById(id);
+const provider = $('provider'), custom = $('customFrame'), host = $('host'), port = $('port'), ssl = $('ssl_enabled'), starttls = $('starttls_enabled');
+function setProvider() { const p=provider.value; const isCustom=p==='Custom'; custom.classList.toggle('visible',isCustom); if(p==='Gmail'){host.value='smtp.gmail.com';port.value=587;ssl.checked=false;starttls.checked=true;} else if(p==='Office365'){host.value='smtp.office365.com';port.value=587;ssl.checked=false;starttls.checked=true;} }
+provider.addEventListener('change',setProvider); ssl.addEventListener('change',()=>{if(ssl.checked){starttls.checked=false;port.value=465;}}); starttls.addEventListener('change',()=>{if(starttls.checked){ssl.checked=false;port.value=587;}}); setProvider();
+$('togglePassword').addEventListener('click',()=>{const input=$('password'); input.type=input.type==='password'?'text':'password';});
+function payload(){return {provider:provider.value,host:host.value,port:port.value,ssl_enabled:ssl.checked,starttls_enabled:starttls.checked,email:$('email').value,password:$('password').value,destination:$('destination').value};}
+function result(data,status){const box=$('smtpMessage');box.className='smtp-card smtp-message '+(data.success?'success':'error');$('resultText').textContent=data.message||'Réponse inattendue';$('smtpDetails').textContent=data.details||'';$('smtpDetails').classList.remove('visible');$('detailsToggle').textContent='Détails techniques ▼';}
+async function run(url){const box=$('smtpMessage');box.className='smtp-card smtp-message info';$('resultText').textContent='Opération en cours...';$('smtpDetails').textContent='';try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload())});const data=await r.json();result(data,r.status);}catch(e){result({success:false,message:'Erreur réseau ❌',details:String(e)});}}
+$('testConnection').addEventListener('click',()=>run('/api/smtp/test-connection')); $('sendEmail').addEventListener('click',()=>run('/api/smtp/send-test-email'));
+$('detailsToggle').addEventListener('click',()=>{$('smtpDetails').classList.toggle('visible');$('detailsToggle').textContent=$('smtpDetails').classList.contains('visible')?'Détails techniques ▲':'Détails techniques ▼';});
+$('copyLogs').addEventListener('click',async()=>{const text=$('resultText').textContent+'\n'+$('smtpDetails').textContent;try{await navigator.clipboard.writeText(text);$('resultText').textContent='Logs copiés dans le presse-papier ✅';}catch(e){$('resultText').textContent='Impossible de copier les logs.';}});
+})();

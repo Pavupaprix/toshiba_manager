@@ -1,0 +1,44 @@
+services:
+  app:
+    build: .
+    # Publié uniquement sur la boucle locale de l'hôte (accès direct pour
+    # les tests M1 en local). En profil `public`, seul le service `proxy`
+    # ci-dessous est exposé sur le réseau/Internet ; l'app ne doit jamais
+    # être atteignable directement en contournant l'authentification du
+    # reverse proxy (FR-011).
+    ports:
+      - "127.0.0.1:${PORT:-5000}:5000"
+    environment:
+      - PORT=5000
+    volumes:
+      - toshiba_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:5000/healthz').status == 200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # Reverse proxy HTTPS + authentification — M2 uniquement (FR-010 à FR-012)
+  # Démarrer avec : docker compose --profile public up
+  proxy:
+    image: caddy:2-alpine
+    profiles: ["public"]
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../../reverse-proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  toshiba_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramétrage Copieur Topaccess — Toshiba Scan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>(function(){var t=localStorage.getItem('ts-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+</head>
+<body>
+    <div class="topbar">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Basculer le thème">
+            <span class="icon-moon">🌙</span>
+            <span class="icon-sun">☀️</span>
+        </button>
+        <a href="{{ url_for('download_bat') }}" download="Toshiba+Partage.bat" class="topbar-logo-link" title="Télécharger Toshiba+Partage.bat">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Toshiba Scan" class="topbar-logo">
+        </a>
+        <span class="topbar-spacer"></span>
+        <div class="topbar-brand">
+            <img src="{{ url_for('static', filename='omb-logo.jpg') }}" alt="OMB Informatique" class="topbar-brand-logo">
+            <span class="topbar-brand-name">OMB&nbsp;<span class="topbar-brand-accent">INFORMATIQUE</span></span>
+        </div>
+    </div>
+    <div class="container smtp-page">
+        <a class="hub-back-btn" href="{{ url_for('hub') }}"><span aria-hidden="true">🏠</span> HUB</a>
+
+        <header class="smtp-header">
+            <div class="smtp-kicker">Paramétrage Copieur Topaccess</div>
+            <h1>Que souhaitez-vous <span class="accent">configurer</span> ?</h1>
+            <p class="smtp-subtitle">Choisissez l'élément à paramétrer sur le copieur.</p>
+        </header>
+
+        <div class="hub-grid">
+            <a class="hub-card" href="{{ url_for('index') }}">
+                <span class="hub-card-icon" aria-hidden="true">📁</span>
+                <div class="hub-card-body">
+                    <h2>Template</h2>
+                    <p>Importez et gérez vos templates de numérisation Toshiba (fichiers XML).</p>
+                </div>
+                <span class="hub-card-arrow" aria-hidden="true">→</span>
+            </a>
+
+            <a class="hub-card" href="{{ url_for('addressbook_page') }}">
+                <span class="hub-card-icon" aria-hidden="true">📇</span>
+                <div class="hub-card-body">
+                    <h2>Carnet d'adresse</h2>
+                    <p>Générez le CSV du carnet d'adresses à importer dans le copieur (TopAccess).</p>
+                </div>
+                <span class="hub-card-arrow" aria-hidden="true">→</span>
+            </a>
+        </div>
+    </div>
+
+    <script>document.getElementById('themeToggle').addEventListener('click',function(){var cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',cur);localStorage.setItem('ts-theme',cur);});</script>
+</body>
+</html>

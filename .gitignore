@@ -1,0 +1,34 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# --- Données runtime ToshibaManager (jamais dans le dépôt) ---
+# Contient de vrais fichiers importés (carnet d'adresses, template actif) —
+# remplacé par le volume Docker nommé toshiba_data au runtime.
+ToshibaManager 1/ToshibaManager/uploads/*
+!ToshibaManager 1/ToshibaManager/uploads/.gitkeep
+
+# --- Secrets ---
+.env
+*.env
+!.env.example
+
+# --- Spec Kit (état machine-local) ---
+.specify/feature.json
+.specify/extensions/*/local-config.yml
+
+# --- Captures d'écran de travail non utilisées par l'app (une contient un
+# nom de machine interne) ---
+ToshibaManager 1/ToshibaManager/Capture d’écran*.png
+ToshibaManager 1/ToshibaManager/Sans titre.png
+
+# --- Éditeurs / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

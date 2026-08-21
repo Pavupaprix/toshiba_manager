@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toshiba Scan Template Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>(function(){var t=localStorage.getItem('ts-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+</head>
+<body>
+    <div class="topbar">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Basculer le thème">
+            <span class="icon-moon">🌙</span>
+            <span class="icon-sun">☀️</span>
+        </button>
+        <a href="{{ url_for('download_bat') }}" download="Toshiba+Partage.bat" class="topbar-logo-link" title="Télécharger Toshiba+Partage.bat">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Toshiba Scan" class="topbar-logo">
+        </a>
+        <span class="topbar-spacer"></span>
+        <div class="topbar-brand">
+            <img src="{{ url_for('static', filename='omb-logo.jpg') }}" alt="OMB Informatique" class="topbar-brand-logo">
+            <span class="topbar-brand-name">OMB&nbsp;<span class="topbar-brand-accent">INFORMATIQUE</span></span>
+        </div>
+    </div>
+    <div class="container">
+        <a class="hub-back-btn" href="{{ url_for('hub') }}"><span aria-hidden="true">🏠</span> HUB</a>
+
+        <header>
+            <span class="header-badge">Gestionnaire de templates</span>
+            <h1>Toshiba <span class="accent">Scan</span> Manager</h1>
+            <p class="subtitle">Importez, visualisez et éditez vos templates de numérisation Toshiba en toute simplicité.</p>
+        </header>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="document.getElementById('xmlFile').click()">
+                📤 Importer XML
+            </button>
+            <button class="btn btn-secondary" onclick="downloadXML()">
+                📥 Exporter XML
+            </button>
+            <input type="file" id="xmlFile" accept=".xml" onchange="handleXMLUpload(event)">
+        </div>
+
+        <div id="groupsContainer"></div>
+    </div>
+
+    <!-- Modal Voir Template -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Détails du Template</div>
+            <div id="viewContent"></div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('viewModal')">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Éditer Template -->
+    <div id="editTemplateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Éditer Template</div>
+            <div class="form-group">
+                <label>Nom du Template</label>
+                <input type="text" id="editTemplateName" placeholder="Nom">
+            </div>
+            <div class="form-group">
+                <label>Sous-titre</label>
+                <input type="text" id="editTemplateCaption2" placeholder="Sous-titre">
+            </div>
+            
+            <!-- DESTINATIONS SMB -->
+            <div id="editDestinations"></div>
+            
+            <!-- DÉTAILS DE SCAN -->
+            <div id="editScanDetails">
+                <h3>📋 Détails de Scan</h3>
+                
+                <div class="form-group">
+                    <label>📎 Format Fichier</label>
+                    <select id="editFileFormat">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="pdf">PDF</option>
+                        <option value="tiff">TIFF</option>
+                        <option value="jpeg">JPEG</option>
+                        <option value="docx">DOCX</option>
+                        <option value="xlsx">XLSX</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>🎨 Mode Couleur</label>
+                    <select id="editColorMode">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="Monochrome">Monochrome</option>
+                        <option value="FullColor">Couleur Complète</option>
+                        <option value="AutoColor">Détection Auto</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>🔄 Rotation (ImageRotate)</label>
+                    <select id="editImageRotate">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="0">0°</option>
+                        <option value="90">90°</option>
+                        <option value="180">180°</option>
+                        <option value="270">270°</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>📄 Mode Image (ImageMode)</label>
+                    <select id="editImageMode">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="Text">Texte</option>
+                        <option value="Photo">Photo</option>
+                        <option value="TextPhoto">Texte + Photo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>📑 Recto/Verso (DuplexMode)</label>
+                    <select id="editDuplexMode">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="Simplex">Simplex (Recto uniquement)</option>
+                        <option value="Book">Book (Recto-Verso)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>📏 Résolution (DPI)</label>
+                    <select id="editResolution">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="200">200 DPI</option>
+                        <option value="300">300 DPI</option>
+                        <option value="600">600 DPI</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>📐 Détection Auto Taille (OriginalSizeDetection)</label>
+                    <select id="editOriginalSizeDetection">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="true">Activée</option>
+                        <option value="false">Désactivée</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>⬜ Ignorer Pages Blanches (OmitBlankPage)</label>
+                    <select id="editOmitBlankPage">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="true">Activée</option>
+                        <option value="false">Désactivée</option>
+                    </select>
+                </div>
+            </div>
+
+            <input type="hidden" id="currentEditTid">
+            <input type="hidden" id="currentEditGid">
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('editTemplateModal')">Annuler</button>
+                <button class="btn btn-save" onclick="saveTemplateEdit()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Éditer Groupe -->
+    <div id="editGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">✏️ Éditer Groupe</div>
+            <div class="form-group">
+                <label>Nom du groupe :</label>
+                <input type="text" id="editGroupNameInput" placeholder="Nom du groupe">
+            </div>
+            
+            <div id="bulkEditContent"></div>
+            
+            <input type="hidden" id="currentEditGid">
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('editGroupModal')">❌ Annuler</button>
+                <button class="btn btn-save" onclick="saveGroupEdit()">💾 Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE DE CONFIRMATION -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="confirm-icon">⚠️</div>
+            <h2 id="confirmTitle">Confirmation</h2>
+            <p id="confirmMessage">Êtes-vous sûr ?</p>
+            <div class="confirm-actions">
+                <button class="btn btn-cancel" onclick="cancelConfirm()">Annuler</button>
+                <button class="btn btn-confirm-delete" onclick="confirmAction()">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>document.getElementById('themeToggle').addEventListener('click',function(){var cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',cur);localStorage.setItem('ts-theme',cur);});</script>
+</body>
+</html>

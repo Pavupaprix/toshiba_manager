@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub — Toshiba Scan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>(function(){var t=localStorage.getItem('ts-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+</head>
+<body>
+    <div class="topbar">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Basculer le thème">
+            <span class="icon-moon">🌙</span>
+            <span class="icon-sun">☀️</span>
+        </button>
+        <a href="{{ url_for('download_bat') }}" download="Toshiba+Partage.bat" class="topbar-logo-link" title="Télécharger Toshiba+Partage.bat">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Toshiba Scan" class="topbar-logo">
+        </a>
+        <span class="topbar-spacer"></span>
+        <div class="topbar-brand">
+            <img src="{{ url_for('static', filename='omb-logo.jpg') }}" alt="OMB Informatique" class="topbar-brand-logo">
+            <span class="topbar-brand-name">OMB&nbsp;<span class="topbar-brand-accent">INFORMATIQUE</span></span>
+        </div>
+    </div>
+    <div class="hub-page">
+        <div class="hub-hero">
+            <span class="hub-kicker">Centre de contrôle</span>
+            <h1 class="hub-title">Que souhaitez-vous <span class="accent">faire</span> ?</h1>
+            <p class="hub-subtitle">Choisissez une action pour configurer votre copieur Toshiba.</p>
+        </div>
+
+        <div class="hub-choices">
+            <a class="hub-choice hub-choice--gear" href="{{ url_for('parametrage') }}">
+                <span class="hub-choice-icon" aria-hidden="true">⚙️</span>
+                <span class="hub-choice-label">Paramétrage Copieur TopAccess</span>
+                <span class="hub-choice-arrow" aria-hidden="true">→</span>
+            </a>
+
+            <a class="hub-choice hub-choice--mail" href="{{ url_for('smtp_test') }}">
+                <span class="hub-choice-icon" aria-hidden="true">✉️</span>
+                <span class="hub-choice-label">Test SMTP</span>
+                <span class="hub-choice-arrow" aria-hidden="true">→</span>
+            </a>
+        </div>
+    </div>
+
+    <script>document.getElementById('themeToggle').addEventListener('click',function(){var cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',cur);localStorage.setItem('ts-theme',cur);});</script>
+</body>
+</html>

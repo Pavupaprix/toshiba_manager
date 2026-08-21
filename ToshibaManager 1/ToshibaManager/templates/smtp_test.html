@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SMTP — Toshiba</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>(function(){var t=localStorage.getItem('ts-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+</head>
+<body class="smtp-page">
+    <div class="topbar">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Basculer le thème">
+            <span class="icon-moon">🌙</span>
+            <span class="icon-sun">☀️</span>
+        </button>
+        <a href="{{ url_for('download_bat') }}" download="Toshiba+Partage.bat" class="topbar-logo-link" title="Télécharger Toshiba+Partage.bat">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Toshiba Scan" class="topbar-logo">
+        </a>
+        <span class="topbar-spacer"></span>
+        <div class="topbar-brand">
+            <img src="{{ url_for('static', filename='omb-logo.jpg') }}" alt="OMB Informatique" class="topbar-brand-logo">
+            <span class="topbar-brand-name">OMB&nbsp;<span class="topbar-brand-accent">INFORMATIQUE</span></span>
+        </div>
+    </div>
+    <div class="container">
+        <a class="hub-back-btn" href="{{ url_for('hub') }}"><span aria-hidden="true">🏠</span> HUB</a>
+
+        <header class="smtp-header">
+            <div class="smtp-kicker">Outil de vérification</div>
+            <h1>Test <span class="accent">SMTP</span></h1>
+            <p class="smtp-subtitle">Validez votre messagerie avant de l'utiliser en production.</p>
+        </header>
+
+        <main class="smtp-grid">
+            <section class="smtp-card">
+                <div class="smtp-card-heading"><span class="smtp-card-icon" aria-hidden="true">⚙️</span><div><p class="smtp-eyebrow">ÉTAPE 1</p><h2>Configuration SMTP</h2></div></div>
+                <label for="provider">Fournisseur</label>
+                <select id="provider"><option>Gmail</option><option>Office365</option><option>Custom</option></select>
+                <div id="customFrame" class="custom-frame">
+                    <h3>Configuration personnalisée</h3>
+                    <label for="host">Host</label><input id="host" type="text" value="smtp.example.com">
+                    <label for="port">Port</label><input id="port" type="number" value="587" min="1" max="65535">
+                    <div class="checkbox-group"><label><input id="ssl_enabled" type="checkbox"> SSL <small>(ex. 465)</small></label><label><input id="starttls_enabled" type="checkbox" checked> STARTTLS <small>(ex. 587)</small></label></div>
+                </div>
+            </section>
+
+            <section class="smtp-card">
+                <div class="smtp-card-heading"><span class="smtp-card-icon" aria-hidden="true">🔐</span><div><p class="smtp-eyebrow">ÉTAPE 2</p><h2>Authentification</h2></div></div>
+                <label for="email">Adresse email</label><input id="email" type="email" autocomplete="username">
+                <label for="password">Mot de passe / App Password</label>
+                <div class="password-wrapper"><input id="password" type="password" autocomplete="current-password"><button type="button" id="togglePassword" class="eye-icon" aria-label="Afficher le mot de passe">👁</button></div>
+                <label for="destination">Destinataire du test</label><input id="destination" type="email">
+            </section>
+        </main>
+
+        <div class="smtp-buttons"><button id="testConnection" class="btn btn-primary">🔎 Tester la connexion</button><button id="sendEmail" class="btn btn-secondary">📨 Envoyer un email test</button></div>
+        <section class="smtp-card smtp-message" id="smtpMessage" aria-live="polite"><div id="resultText">Prêt à tester.</div><button id="detailsToggle" class="btn-details-toggle" type="button">Détails techniques ▼</button><pre id="smtpDetails" class="smtp-details"></pre><button id="copyLogs" class="btn btn-secondary" type="button">📋 Copier les logs</button></section>
+    </div>
+    <script src="{{ url_for('static', filename='smtp.js') }}"></script>
+    <script>document.getElementById('themeToggle').addEventListener('click',function(){var cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',cur);localStorage.setItem('ts-theme',cur);});</script>
+</body>
+</html>
