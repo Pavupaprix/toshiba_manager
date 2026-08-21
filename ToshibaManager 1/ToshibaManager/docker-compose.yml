@@ -1,13 +1,17 @@
 services:
   app:
     build: .
-    # Publié uniquement sur la boucle locale de l'hôte (accès direct pour
-    # les tests M1 en local). En profil `public`, seul le service `proxy`
-    # ci-dessous est exposé sur le réseau/Internet ; l'app ne doit jamais
-    # être atteignable directement en contournant l'authentification du
-    # reverse proxy (FR-011).
+    # Publié sur toutes les interfaces de l'hôte pour rester joignable
+    # depuis un reverse proxy tiers sur le même LAN (ex. Nginx Proxy
+    # Manager, Cloudflare Tunnel en conteneur séparé...), pas seulement en
+    # loopback. Reste limité au réseau local — ne PAS rediriger ce port
+    # directement depuis Internet : passe par un reverse proxy qui exige
+    # une authentification avant l'app (FR-011). Le service `proxy`
+    # ci-dessous (profil `public`) en est un exemple intégré ; si tu utilises
+    # ton propre reverse proxy (NPM, etc.), pense à protéger l'accès de son
+    # côté (ex. Access List NPM, Cloudflare Access...).
     ports:
-      - "127.0.0.1:${PORT:-5000}:5000"
+      - "${PORT:-5000}:5000"
     environment:
       - PORT=5000
     volumes:
