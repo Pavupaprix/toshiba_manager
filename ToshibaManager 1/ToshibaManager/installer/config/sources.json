@@ -1,0 +1,31 @@
+{
+  "_commentaire": "Localisation des paquets pilotes. 'archive' est le nom du ZIP, resolu soit dans le dossier local 'racineLocale', soit sur la racine web passee au script via -SourceRacine. 'sha256' n'est verifie que pour les telechargements web. 'infAmd64'/'infX86' sont recherches recursivement dans l'archive decompressee.",
+  "racineLocale": "Drivers Toshiba",
+  "racineWeb": "",
+  "pilotes": {
+    "Universal": {
+      "nomPilote": "TOSHIBA Universal Printer 2",
+      "libelle": "TOSHIBA e-STUDIO Universal Printer Driver 2 (multifonctions)",
+      "archive": "TOSHIBA e-STUDIO Universal Printer Driver 2 [V.7.222.5412.313].zip",
+      "sha256": "C86F6322C46EB1DFBD68CF3E034B85680E1E458B7990AC1AC6FBB96C3BCD61A3",
+      "infAmd64": "eSf6u.inf",
+      "infX86": "eSf3u.inf"
+    },
+    "Generic": {
+      "nomPilote": "TOSHIBA Generic Printer XL",
+      "libelle": "TOSHIBA Generic Printer Driver 3.0.3.0 XL-PCL6 (imprimantes)",
+      "archive": "Toshiba Generic Printer Driver 3.0.3.0 [XL-PCL6].zip",
+      "sha256": "B6644625CC1E924DF00CB00E5DA9505583130B6543EDBDA93F9C558CC6173608",
+      "infAmd64": "TSUD1p40.inf",
+      "infX86": "TSUD1p40.inf"
+    },
+    "GenericPCL5": {
+      "nomPilote": "TOSHIBA Generic Printer",
+      "libelle": "TOSHIBA Generic Printer Driver 3.0.3.0 PCL5 (compatibilite applis anciennes)",
+      "archive": "Toshiba Generic Printer Driver 3.0.3.0 [PCL5].zip",
+      "sha256": "2C6FC8539903993E1017FFD8D148A572EDB94639089F66E3E709AC00D71765C3",
+      "infAmd64": "TSUD1o40.inf",
+      "infX86": "TSUD1o40.inf"
+    }
+  }
+}

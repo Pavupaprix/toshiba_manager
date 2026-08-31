@@ -10,7 +10,12 @@
 #                              `docker run --rm caddy:2-alpine caddy hash-password`)
 
 {$DOMAIN} {
-	basic_auth {
+	# Le script d'installation des copieurs est telecharge par un .bat qui
+	# tourne sur le poste client, sans session ni identifiants : ces chemins
+	# doivent rester accessibles sans authentification.
+	@protege not path /installer /installer/*
+
+	basic_auth @protege {
 		{$BASIC_AUTH_USER} {$BASIC_AUTH_PASSWORD_HASH}
 	}
 

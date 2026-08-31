@@ -11,6 +11,13 @@ venv/
 ToshibaManager 1/ToshibaManager/uploads/*
 !ToshibaManager 1/ToshibaManager/uploads/.gitkeep
 
+# --- Archives de pilotes Toshiba (~215 Mo, deposees sur l'hote) ---
+# Montees en lecture seule dans le conteneur via ../../drivers:/app/drivers:ro
+drivers/
+
+# --- Sauvegardes horodatees des DEVMODE de reference ---
+ToshibaManager 1/ToshibaManager/installer/devmode/*.bak
+
 # --- Secrets ---
 .env
 *.env

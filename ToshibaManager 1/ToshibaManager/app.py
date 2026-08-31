@@ -10,6 +10,7 @@ from datetime import datetime
 from email.mime.text import MIMEText
 
 import addressbook
+from installer_routes import installer_bp
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -18,6 +19,9 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 XML_FILE = os.path.join(app.config['UPLOAD_FOLDER'], 'templates.xml')
+
+# Distribution du script d'installation des copieurs (voir installer_routes.py).
+app.register_blueprint(installer_bp)
 
 # -------------------------
 # Validation du template par défaut au démarrage (FR-009, constitution

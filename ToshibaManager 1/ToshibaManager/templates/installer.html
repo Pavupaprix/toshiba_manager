@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installer un copieur — Toshiba</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>(function(){var t=localStorage.getItem('ts-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+</head>
+<body class="smtp-page">
+    <div class="topbar">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Basculer le thème">
+            <span class="icon-moon">🌙</span>
+            <span class="icon-sun">☀️</span>
+        </button>
+        <a href="{{ url_for('download_bat') }}" download="Toshiba+Partage.bat" class="topbar-logo-link" title="Télécharger Toshiba+Partage.bat">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Toshiba Scan" class="topbar-logo">
+        </a>
+        <span class="topbar-spacer"></span>
+        <div class="topbar-brand">
+            <img src="{{ url_for('static', filename='omb-logo.jpg') }}" alt="OMB Informatique" class="topbar-brand-logo">
+            <span class="topbar-brand-name">OMB&nbsp;<span class="topbar-brand-accent">INFORMATIQUE</span></span>
+        </div>
+    </div>
+
+    <div class="container">
+        <a class="hub-back-btn" href="{{ url_for('hub') }}"><span aria-hidden="true">🏠</span> HUB</a>
+
+        <header class="smtp-header">
+            <div class="smtp-kicker">Poste client</div>
+            <h1>Installer un <span class="accent">copieur</span></h1>
+            <p class="smtp-subtitle">Générez un fichier d'installation prêt à lancer sur le poste de l'utilisateur.</p>
+        </header>
+
+        {% if aucun_pilote %}
+        <section class="smtp-card smtp-message">
+            <div><strong>Aucune archive de pilote disponible sur le serveur.</strong></div>
+            <div>Déposez les fichiers ZIP dans le dossier <code>drivers/</code> de l'hôte, puis rechargez cette page.
+                 Sans eux, le fichier généré échouera sur le poste client.</div>
+        </section>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('installer.telecharger_bat') }}">
+            <main class="smtp-grid">
+                <section class="smtp-card">
+                    <div class="smtp-card-heading">
+                        <span class="smtp-card-icon" aria-hidden="true">🖨️</span>
+                        <div><p class="smtp-eyebrow">ÉTAPE 1</p><h2>Le copieur</h2></div>
+                    </div>
+
+                    <label for="ip">Adresse IP</label>
+                    <input id="ip" name="ip" type="text" inputmode="decimal"
+                           placeholder="10.35.50.98" required
+                           pattern="^(\d{1,3}\.){3}\d{1,3}$"
+                           title="Adresse IPv4, par exemple 10.35.50.98">
+
+                    <label for="modele">Modèle</label>
+                    <input id="modele" name="modele" type="text"
+                           placeholder="3525AC" required
+                           pattern="^[A-Za-z0-9]{3,10}$"
+                           title="3 à 10 caractères alphanumériques, sans espace : 3525AC, 2010AC, 305CP, 409S">
+
+                    <label for="pilote">Pilote</label>
+                    <select id="pilote" name="pilote">
+                        <option value="">Déduit du modèle (recommandé)</option>
+                        {% for cle, p in pilotes.items() %}
+                        <option value="{{ cle }}">{{ p.nomPilote }}{% if not p.disponible %} — archive absente{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </section>
+
+                <section class="smtp-card">
+                    <div class="smtp-card-heading">
+                        <span class="smtp-card-icon" aria-hidden="true">📋</span>
+                        <div><p class="smtp-eyebrow">ÉTAPE 2</p><h2>Sur le poste</h2></div>
+                    </div>
+                    <ol>
+                        <li>Enregistrez le fichier généré sur le poste de l'utilisateur.</li>
+                        <li>Double-cliquez dessus et acceptez l'élévation.</li>
+                        <li>L'installation se déroule seule : pilote, port TCP/IP, nom de la file,
+                            noir &amp; blanc, recto/verso, A4 et impression intelligente.</li>
+                    </ol>
+                    <p><small>Le modèle saisi ici est vérifié en SNMP sur place : un écart est signalé
+                       pendant l'installation.</small></p>
+                </section>
+            </main>
+
+            <div class="smtp-buttons">
+                <button type="submit" class="btn btn-primary">⬇️ Générer le fichier d'installation</button>
+            </div>
+        </form>
+
+        <section class="smtp-card smtp-message">
+            <div><strong>Pilotes présents sur le serveur</strong></div>
+            <ul>
+                {% for cle, p in pilotes.items() %}
+                <li>{{ p.libelle }} — {% if p.disponible %}disponible{% else %}archive absente{% endif %}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+
+    <script>document.getElementById('themeToggle').addEventListener('click',function(){var cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',cur);localStorage.setItem('ts-theme',cur);});</script>
+</body>
+</html>
