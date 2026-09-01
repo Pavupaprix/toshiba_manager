@@ -590,6 +590,21 @@ function Set-ReglagesImpression {
 
     $dossierDevMode = if ($DevModeDir) { $DevModeDir } else { Join-Path $script:RacineScript 'devmode' }
     $blob = Join-Path $dossierDevMode "$NomPilote.bin"
+
+    # Le pilote Toshiba distingue trois modes couleur (Noir & blanc, Auto,
+    # Couleur) là où dmColor n'en connaît que deux : dmColor=2 seul donne Auto.
+    # Le mode Couleur vit dans la zone privée, protégée par des sommes de
+    # contrôle, donc on ne le bricole pas : on utilise une capture dédiée.
+    if ($Couleur) {
+        $blobCouleur = Join-Path $dossierDevMode "$NomPilote.couleur.bin"
+        if (Test-Path -LiteralPath $blobCouleur) {
+            $blob = $blobCouleur
+        }
+        else {
+            Write-Avertissement "Aucune capture couleur pour « $NomPilote » ($blobCouleur) : la file risque de rester en mode Auto plutôt que Couleur. Produire le fichier avec Exporter-Reglages.bat -Couleur."
+        }
+    }
+
     $blobPresent = Test-Path -LiteralPath $blob
 
     $modeCouleur = [bool]$Couleur

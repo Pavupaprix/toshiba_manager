@@ -114,6 +114,34 @@ les modèles partageant ce pilote :
 Tant qu'un fichier est absent, l'installation se termine normalement mais
 affiche un avertissement : l'impression intelligente reste à régler à la main.
 
+### Le cas de la couleur
+
+Le pilote Toshiba distingue **trois** modes couleur — Noir & blanc, Auto,
+Couleur — là où le champ standard `dmColor` n'en connaît que deux. Mesuré sur
+un 2010AC : `dmColor=1` donne Noir & blanc, `dmColor=2` donne **Auto**, et le
+mode Couleur n'existe que dans la zone privée, où les blocs sont protégés par
+des sommes de contrôle (marqueurs `55 55`).
+
+`-Couleur` charge donc une capture dédiée plutôt que de bricoler ces octets :
+
+```
+devmode\<NomDuPilote>.couleur.bin
+```
+
+Produite de la même façon que l'autre, en sélectionnant **Couleur** (et non
+Auto) dans l'onglet Basique :
+
+```powershell
+.\Export-ReglagesToshiba.ps1 -Couleur
+```
+
+Sans ce fichier, l'installation en couleur se termine mais avertit que la file
+restera probablement en Auto. Inutile pour les pilotes monochromes.
+
+Le recto/verso, lui, ne demande aucune capture supplémentaire : `dmDuplex` est
+respecté par le pilote, vérifié sur matériel.
+
+
 ## Pilotes
 
 Les archives ne sont pas versionnées dans ce dépôt (plus de 200 Mo au total) :

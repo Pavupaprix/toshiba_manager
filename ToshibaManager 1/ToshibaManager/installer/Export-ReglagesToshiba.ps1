@@ -34,6 +34,7 @@
 param(
     [string]$PrinterName,
     [string]$DevModeDir,
+    [switch]$Couleur,
     [switch]$SansOuverture
 )
 
@@ -86,7 +87,12 @@ try {
         Write-Host '    Tout ce qui est réglé dans cette fenêtre sera rejoué sur chaque' -ForegroundColor White
         Write-Host '    installation. Points à vérifier onglet par onglet :' -ForegroundColor White
         Write-Host ''
-        Write-Host '      Basique  : Couleur = Noir & blanc' -ForegroundColor Gray
+        if ($Couleur) {
+            Write-Host '      Basique  : Couleur = Couleur (pas Auto)' -ForegroundColor Gray
+        }
+        else {
+            Write-Host '      Basique  : Couleur = Noir & blanc' -ForegroundColor Gray
+        }
         Write-Host '                 Format papier original = A4' -ForegroundColor Gray
         Write-Host '      Finition : Recto/verso = Livre (reliure bord long)' -ForegroundColor Gray
         Write-Host '      Effet    : cocher « Impression intelligente pour plusieurs' -ForegroundColor Gray
@@ -105,7 +111,8 @@ try {
     }
 
     $dossier = if ($DevModeDir) { $DevModeDir } else { Join-Path $racine 'devmode' }
-    $destination = Join-Path $dossier ("{0}.bin" -f $file.DriverName)
+    $suffixe = if ($Couleur) { '.couleur' } else { '' }
+    $destination = Join-Path $dossier ("{0}{1}.bin" -f $file.DriverName, $suffixe)
 
     $precedent = $null
     if (Test-Path -LiteralPath $destination) {
