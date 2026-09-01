@@ -54,15 +54,18 @@
                            pattern="^(\d{1,3}\.){3}\d{1,3}$"
                            title="Adresse IPv4, par exemple 10.35.50.98">
 
-                    <label for="modele">Modèle</label>
+                    <label for="modele">Modèle <small>— facultatif</small></label>
                     <input id="modele" name="modele" type="text"
-                           placeholder="3525AC" required
+                           placeholder="détecté automatiquement"
                            pattern="^[A-Za-z0-9]{3,10}$"
                            title="3 à 10 caractères alphanumériques, sans espace : 3525AC, 2010AC, 305CP, 409S">
+                    <p><small>Laissé vide, le modèle est détecté en SNMP sur place et le pilote
+                       en est déduit. Renseignez-le seulement pour les copieurs dont le SNMP est
+                       coupé : il servira alors de repli, sans rien à saisir sur le poste.</small></p>
 
-                    <label for="pilote">Pilote</label>
+                    <label for="pilote">Pilote <small>— facultatif</small></label>
                     <select id="pilote" name="pilote">
-                        <option value="">Déduit du modèle (recommandé)</option>
+                        <option value="">Déduit du modèle détecté (recommandé)</option>
                         {% for cle, p in pilotes.items() %}
                         <option value="{{ cle }}">{{ p.nomPilote }}{% if not p.disponible %} — archive absente{% endif %}</option>
                         {% endfor %}
@@ -71,17 +74,26 @@
 
                 <section class="smtp-card">
                     <div class="smtp-card-heading">
-                        <span class="smtp-card-icon" aria-hidden="true">📋</span>
-                        <div><p class="smtp-eyebrow">ÉTAPE 2</p><h2>Sur le poste</h2></div>
+                        <span class="smtp-card-icon" aria-hidden="true">🎨</span>
+                        <div><p class="smtp-eyebrow">ÉTAPE 2</p><h2>Réglages par défaut</h2></div>
                     </div>
-                    <ol>
-                        <li>Enregistrez le fichier généré sur le poste de l'utilisateur.</li>
-                        <li>Double-cliquez dessus et acceptez l'élévation.</li>
-                        <li>L'installation se déroule seule : pilote, port TCP/IP, nom de la file,
-                            noir &amp; blanc, recto/verso, A4 et impression intelligente.</li>
-                    </ol>
-                    <p><small>Le modèle saisi ici est vérifié en SNMP sur place : un écart est signalé
-                       pendant l'installation.</small></p>
+
+                    <label for="couleur">Couleur</label>
+                    <select id="couleur" name="couleur">
+                        <option value="nb" selected>Noir &amp; blanc</option>
+                        <option value="couleur">Couleur</option>
+                    </select>
+
+                    <label for="rectoverso">Impression</label>
+                    <select id="rectoverso" name="rectoverso">
+                        <option value="recto" selected>Recto</option>
+                        <option value="rectoverso">Recto/verso — reliure bord long</option>
+                    </select>
+
+                    <p><small>Appliqué aux deux jeux de réglages : les <em>Préférences
+                       d'impression</em> de l'utilisateur et les <em>Paramètres par défaut de
+                       l'impression</em> de la machine. Le format A4 et l'impression intelligente
+                       sont appliqués dans tous les cas.</small></p>
                 </section>
             </main>
 
@@ -89,6 +101,20 @@
                 <button type="submit" class="btn btn-primary">⬇️ Générer le fichier d'installation</button>
             </div>
         </form>
+
+        <section class="smtp-card smtp-message">
+            <div><strong>Sur le poste de l'utilisateur</strong></div>
+            <ol>
+                <li>Enregistrez le fichier généré et double-cliquez dessus.</li>
+                <li>Acceptez l'élévation UAC.</li>
+                <li>Le script interroge le copieur, affiche le modèle détecté et le pilote
+                    retenu, et demande confirmation. Si le SNMP ne répond pas, il demande le
+                    modèle.</li>
+                <li>Il installe ensuite le pilote, crée le port TCP/IP, nomme la file
+                    <code>TOSHIBA &lt;MODELE&gt;</code>, applique les réglages et la définit
+                    comme imprimante par défaut.</li>
+            </ol>
+        </section>
 
         <section class="smtp-card smtp-message">
             <div><strong>Pilotes présents sur le serveur</strong></div>

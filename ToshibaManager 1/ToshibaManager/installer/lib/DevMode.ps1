@@ -272,11 +272,52 @@ function Export-PrinterDevMode {
     return $data.Length
 }
 
+function Set-DevModeReglages {
+    <#
+        Force le mode couleur et le recto/verso dans un DEVMODE, en place.
+
+        On modifie les champs standard plutot que de repasser par
+        Set-PrintConfiguration apres coup : cette cmdlet reconstruit le DEVMODE
+        via WMI et perd la zone privee du pilote, donc l'impression
+        intelligente. Ici la zone privee est preservee telle quelle.
+
+        Offsets dans DEVMODE : dmFields 72 (DWORD), dmColor 92, dmDuplex 94.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][byte[]]$Data,
+        [Parameter(Mandatory)][bool]$Couleur,
+        [Parameter(Mandatory)][bool]$RectoVerso
+    )
+
+    if ($Data.Length -lt 96) {
+        throw "DEVMODE trop court pour porter dmColor et dmDuplex ($($Data.Length) octets)."
+    }
+
+    $copie = [byte[]]$Data.Clone()
+
+    # DMCOLOR_MONOCHROME = 1, DMCOLOR_COLOR = 2
+    [System.BitConverter]::GetBytes([uint16]$(if ($Couleur) { 2 } else { 1 })).CopyTo($copie, 92)
+
+    # DMDUP_SIMPLEX = 1, DMDUP_VERTICAL = 2 (reliure bord long)
+    [System.BitConverter]::GetBytes([uint16]$(if ($RectoVerso) { 2 } else { 1 })).CopyTo($copie, 94)
+
+    # DM_COLOR = 0x800, DM_DUPLEX = 0x1000 : sans ces bits dans dmFields, le
+    # pilote ignore les deux champs ci-dessus.
+    $champs = [System.BitConverter]::ToUInt32($copie, 72) -bor 0x00000800 -bor 0x00001000
+    [System.BitConverter]::GetBytes([uint32]$champs).CopyTo($copie, 72)
+
+    return , $copie
+}
+
 function Import-PrinterDevMode {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$PrinterName,
-        [Parameter(Mandatory)][string]$Path
+        [Parameter(Mandatory)][string]$Path,
+        [bool]$Couleur,
+        [bool]$RectoVerso,
+        [switch]$ForcerReglages
     )
 
     if (-not (Test-Path -LiteralPath $Path)) {
@@ -285,6 +326,10 @@ function Import-PrinterDevMode {
 
     Initialize-DevModeInterop
     $data = [System.IO.File]::ReadAllBytes($Path)
+
+    if ($ForcerReglages) {
+        $data = Set-DevModeReglages -Data $data -Couleur $Couleur -RectoVerso $RectoVerso
+    }
 
     # Defauts machine d'abord (visibles par tous les utilisateurs du poste),
     # puis defauts de l'utilisateur courant qui priment a l'impression.

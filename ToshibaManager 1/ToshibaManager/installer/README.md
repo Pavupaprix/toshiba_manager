@@ -2,8 +2,9 @@
 
 Script PowerShell d'installation d'un copieur Toshiba en port TCP/IP, avec
 détection du modèle en SNMP, choix automatique du pilote, nommage normalisé
-`TOSHIBA <MODELE>`, réglages par défaut (noir & blanc, recto/verso, impression
-intelligente) et affectation en imprimante par défaut.
+`TOSHIBA <MODELE>`, réglages par défaut (noir & blanc et recto simple sauf
+commutateur contraire, A4, impression intelligente) et affectation en
+imprimante par défaut.
 
 ## Utilisation
 
@@ -29,6 +30,8 @@ Le script demande ensuite l'adresse IP du copieur et déroule l'installation.
 | `-DevModeDir`    | Dossier des DEVMODE de référence. Défaut : `.\devmode`. |
 | `-Communaute`    | Communauté SNMP en lecture. Défaut : `public`. |
 | `-FormatPapier`  | Format papier par défaut. Défaut : `A4`. Chaîne vide pour ne pas y toucher. |
+| `-Couleur`       | Couleur par défaut. Sans ce commutateur : noir et blanc. |
+| `-RectoVerso`    | Recto/verso bord long par défaut. Sans ce commutateur : recto simple. |
 | `-NonInteractif` | Échoue au lieu de poser une question. |
 | `-PasDeParDefaut`| N'affecte pas l'imprimante comme imprimante par défaut. |
 
@@ -53,8 +56,9 @@ Journal complet dans `%ProgramData%\OMB\InstallCopieur\install-<horodatage>.log`
    `TOSHIBA 3525AC 3`, etc. Si une file existe déjà sur le même port, elle est
    reconfigurée au lieu d'être dupliquée. En cas de nom inattendu, la file est
    retrouvée par son port ou son pilote puis renommée.
-9. Applique le DEVMODE de référence s'il existe, puis force noir & blanc et
-   recto/verso par cmdlet.
+9. Force le mode couleur, le recto/verso et le format papier par cmdlet, puis
+   applique le DEVMODE de référence s'il existe, avec ces mêmes choix réécrits
+   dedans.
 10. Désactive la gestion automatique de l'imprimante par défaut par Windows et
     définit la file comme imprimante par défaut.
 11. Affiche un récapitulatif contrôlé (`Get-Printer`, `Get-PrintConfiguration`,
@@ -72,11 +76,14 @@ Windows conserve **deux jeux de réglages distincts** par file :
 
 Le script écrit les deux, dans cet ordre précis :
 
-1. `Set-PrintConfiguration` pour le noir & blanc, le recto/verso et le format
+1. `Set-PrintConfiguration` pour le mode couleur, le recto/verso et le format
    papier. Cette cmdlet reconstruit le DEVMODE machine via WMI et **perd au
    passage la zone privée du pilote** : elle doit donc passer en premier.
 2. Le DEVMODE de référence en dernier, appliqué aux deux niveaux. Il porte les
-   mêmes réglages standard plus les options Toshiba, et a le dernier mot.
+   options Toshiba et a le dernier mot. Comme il fige aussi le mode couleur et
+   le recto/verso tels que capturés, `Set-DevModeReglages` y réécrit `dmColor`
+   (offset 92) et `dmDuplex` (offset 94) avant application, pour respecter
+   `-Couleur` et `-RectoVerso` sans toucher à la zone privée.
 3. Sans DEVMODE de référence, `Sync-PrinterUserDefaults` recopie les paramètres
    par défaut dans les préférences de l'utilisateur.
 
@@ -84,7 +91,7 @@ Inverser 1 et 2 donne une file où l'impression intelligente apparaît dans les
 préférences mais pas dans les paramètres par défaut. En fin d'installation, le
 script compare les deux jeux et prévient s'ils diffèrent encore.
 
-Le noir & blanc et le recto/verso passent par `Set-PrintConfiguration`.
+Le mode couleur et le recto/verso passent par `Set-PrintConfiguration`.
 L'**impression intelligente** et les autres options propres au pilote Toshiba
 vivent dans la partie privée du DEVMODE et ne sont accessibles à aucune cmdlet
 Windows. Elles sont donc capturées une fois sur un poste de référence.

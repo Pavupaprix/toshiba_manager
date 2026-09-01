@@ -1,8 +1,12 @@
 """Distribution du script d'installation des copieurs Toshiba.
 
-Le technicien saisit l'adresse IP et le modèle sur /installer et récupère un
-.bat déjà paramétré. Sur le poste client, ce .bat s'élève en UAC, télécharge
-le toolkit PowerShell puis l'archive du pilote, et lance l'installation.
+Le technicien saisit l'adresse IP sur /installer et récupère un .bat déjà
+paramétré. Sur le poste client, ce .bat s'élève en UAC, télécharge le toolkit
+PowerShell, détecte le modèle du copieur en SNMP, en déduit le pilote, puis
+télécharge l'archive correspondante et installe.
+
+Le modèle est facultatif dans le formulaire : renseigné, il sert de valeur de
+repli quand le SNMP ne répond pas, ce qui évite toute saisie sur le poste.
 
 Tout le code de cette fonctionnalité vit ici : app.py ne fait qu'enregistrer
 le blueprint, ce qui garantit que le reste de l'application n'est pas touché.
@@ -97,16 +101,15 @@ def _url_base():
 
 GABARIT_BAT = r"""@echo off
 setlocal
-title Installation TOSHIBA {modele} ({ip})
+title Installation copieur TOSHIBA ({ip})
 
 rem Genere par ToshibaManager. Ne pas modifier a la main :
 rem regenerer depuis {base_url}/installer
 
 set "IP={ip}"
-set "MODELE={modele}"
-set "PILOTE={pilote}"
+set "OPTIONS={options}"
 set "BASE={base_url}/installer"
-set "TRAVAIL=%TEMP%\InstallCopieurToshiba\%MODELE%-%RANDOM%"
+set "TRAVAIL=%TEMP%\InstallCopieurToshiba\%RANDOM%%RANDOM%"
 
 net session >nul 2>&1
 if %errorlevel% neq 0 (
@@ -116,7 +119,7 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo   Installation du copieur TOSHIBA %MODELE% sur %IP%
+echo   Installation du copieur TOSHIBA sur %IP%
 echo   ---------------------------------------------------
 echo.
 
@@ -138,7 +141,7 @@ if not exist "%TRAVAIL%\Install-CopieurToshiba.ps1" (
 )
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%TRAVAIL%\Install-CopieurToshiba.ps1" ^
-  -IP "%IP%" -Modele "%MODELE%" -Pilote "%PILOTE%" -SourceRacine "%BASE%/drivers"
+  -IP "%IP%" %OPTIONS% -SourceRacine "%BASE%/drivers"
 
 set "CODE=%errorlevel%"
 rd /s /q "%TRAVAIL%" 2>nul
@@ -146,8 +149,8 @@ exit /b %CODE%
 """
 
 
-def generer_bat(ip, modele, pilote):
-    return GABARIT_BAT.format(ip=ip, modele=modele, pilote=pilote,
+def generer_bat(ip, options):
+    return GABARIT_BAT.format(ip=ip, options=options,
                               base_url=_url_base()).replace('\n', '\r\n')
 
 
@@ -170,22 +173,36 @@ def telecharger_bat():
     ip_brute = (request.form.get('ip') or '').strip()
     modele_brut = (request.form.get('modele') or '').strip().upper().replace(' ', '')
 
-    # Ces deux valeurs finissent dans un fichier executable : rien d'autre
-    # qu'une IP valide et un modele alphanumerique ne doit passer.
+    # Ces valeurs finissent dans un fichier executable : rien d'autre qu'une IP
+    # valide et un modele alphanumerique ne doit passer.
     try:
         ipaddress.ip_address(ip_brute)
     except ValueError:
         return jsonify({'error': f"Adresse IP invalide : {ip_brute or '(vide)'}"}), 400
 
-    if not MODELE_RE.match(modele_brut):
+    # Le modele est facultatif : laisse vide, il est detecte en SNMP sur place.
+    if modele_brut and not MODELE_RE.match(modele_brut):
         return jsonify({'error': "Modèle invalide : 3 à 10 caractères alphanumériques attendus (ex. 3525AC)"}), 400
 
-    pilote = (request.form.get('pilote') or '').strip() or resoudre_pilote(modele_brut)
-    if pilote not in _pilotes():
+    pilote = (request.form.get('pilote') or '').strip()
+    if pilote and pilote not in _pilotes():
         return jsonify({'error': f'Pilote inconnu : {pilote}'}), 400
+    # Sans modele saisi, le pilote se deduit sur le poste, apres detection.
+    if modele_brut and not pilote:
+        pilote = resoudre_pilote(modele_brut)
 
-    contenu = generer_bat(ip_brute, modele_brut, pilote)
-    nom = f'Installer TOSHIBA {modele_brut} ({ip_brute}).bat'
+    options = []
+    if modele_brut:
+        options.append(f'-Modele "{modele_brut}"')
+    if pilote:
+        options.append(f'-Pilote "{pilote}"')
+    if request.form.get('couleur') == 'couleur':
+        options.append('-Couleur')
+    if request.form.get('rectoverso') == 'rectoverso':
+        options.append('-RectoVerso')
+
+    contenu = generer_bat(ip_brute, ' '.join(options))
+    nom = f'Installer copieur ({ip_brute}).bat'
 
     return current_app.response_class(
         contenu.encode('ascii', 'replace'),

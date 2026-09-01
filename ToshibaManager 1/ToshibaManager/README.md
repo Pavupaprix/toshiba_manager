@@ -30,11 +30,19 @@ via le réseau Docker interne — jamais directement exposée.
 
 ## Installation des copieurs sur les postes clients
 
-La page `/installer` (3ᵉ tuile du hub) génère un `.bat` déjà paramétré avec
-l'adresse IP et le modèle saisis. Sur le poste de l'utilisateur, ce fichier
-s'élève en UAC, télécharge le toolkit PowerShell puis l'archive du pilote
-depuis ce serveur, et installe le copieur : pilote, port TCP/IP, file nommée
-`TOSHIBA <MODELE>`, noir & blanc, recto/verso, A4 et impression intelligente.
+La page `/installer` (1ʳᵉ tuile du hub) génère un `.bat` déjà paramétré avec
+l'adresse IP du copieur. Sur le poste de l'utilisateur, ce fichier s'élève en
+UAC, télécharge le toolkit PowerShell, détecte le modèle en SNMP, en déduit le
+pilote, télécharge l'archive correspondante depuis ce serveur et installe le
+copieur : pilote, port TCP/IP, file nommée `TOSHIBA <MODELE>`, A4 et impression
+intelligente.
+
+Le formulaire propose deux réglages, appliqués aux deux jeux (préférences de
+l'utilisateur et paramètres par défaut de la machine) : couleur ou noir & blanc,
+recto ou recto/verso. Les valeurs par défaut sont noir & blanc et recto.
+
+Le champ modèle est facultatif : renseigné, il sert de repli quand le SNMP du
+copieur est coupé, ce qui évite toute saisie sur le poste client.
 
 Tout le code est dans `installer_routes.py` (blueprint Flask) et `installer/`
 (le toolkit PowerShell distribué). Voir `installer/README.md` pour le

@@ -32,6 +32,12 @@
 .PARAMETER FormatPapier
     Format papier par défaut. Par défaut : A4. Chaîne vide pour ne pas y toucher.
 
+.PARAMETER Couleur
+    Impression en couleur par défaut. Sans ce commutateur : noir et blanc.
+
+.PARAMETER RectoVerso
+    Recto/verso (reliure bord long) par défaut. Sans ce commutateur : recto simple.
+
 .PARAMETER NonInteractif
     Échoue au lieu de poser une question. Impose -IP et, si le SNMP ne répond
     pas, -Modele et -Pilote.
@@ -56,6 +62,8 @@ param(
     [string]$DevModeDir,
     [string]$Communaute = 'public',
     [string]$FormatPapier = 'A4',
+    [switch]$Couleur,
+    [switch]$RectoVerso,
     [switch]$NonInteractif,
     [switch]$PasDeParDefaut
 )
@@ -584,24 +592,28 @@ function Set-ReglagesImpression {
     $blob = Join-Path $dossierDevMode "$NomPilote.bin"
     $blobPresent = Test-Path -LiteralPath $blob
 
+    $modeCouleur = [bool]$Couleur
+    $modeRectoVerso = [bool]$RectoVerso
+
     # 1. Réglages standard par cmdlet. Set-PrintConfiguration reconstruit le
     #    DEVMODE machine via WMI et perd au passage la zone privée du pilote :
     #    ces appels doivent donc précéder l'application du DEVMODE de référence,
     #    jamais la suivre.
     try {
-        Set-PrintConfiguration -PrinterName $NomFile -Color $false -ErrorAction Stop
-        Write-Succes "Noir et blanc par défaut"
+        Set-PrintConfiguration -PrinterName $NomFile -Color $modeCouleur -ErrorAction Stop
+        Write-Succes $(if ($modeCouleur) { 'Couleur par défaut' } else { 'Noir et blanc par défaut' })
     }
     catch {
-        Write-Avertissement "Impossible de forcer le noir et blanc : $($_.Exception.Message)"
+        Write-Avertissement "Impossible de forcer le mode couleur : $($_.Exception.Message)"
     }
 
+    $modeDuplex = if ($modeRectoVerso) { 'TwoSidedLongEdge' } else { 'OneSided' }
     try {
-        Set-PrintConfiguration -PrinterName $NomFile -DuplexingMode TwoSidedLongEdge -ErrorAction Stop
-        Write-Succes "Recto/verso (reliure bord long) par défaut"
+        Set-PrintConfiguration -PrinterName $NomFile -DuplexingMode $modeDuplex -ErrorAction Stop
+        Write-Succes $(if ($modeRectoVerso) { 'Recto/verso (reliure bord long) par défaut' } else { 'Recto simple par défaut' })
     }
     catch {
-        Write-Avertissement "Impossible de forcer le recto/verso : $($_.Exception.Message)"
+        Write-Avertissement "Impossible de forcer le mode recto/verso : $($_.Exception.Message)"
     }
 
     if ($FormatPapier) {
@@ -619,7 +631,10 @@ function Set-ReglagesImpression {
     #    et il écrit les deux niveaux, machine et utilisateur.
     if ($blobPresent) {
         try {
-            Import-PrinterDevMode -PrinterName $NomFile -Path $blob
+            # Le blob a le dernier mot, on y injecte donc le mode couleur et le
+            # recto/verso demandés, sinon il rétablirait ceux de la capture.
+            Import-PrinterDevMode -PrinterName $NomFile -Path $blob `
+                -Couleur $modeCouleur -RectoVerso $modeRectoVerso -ForcerReglages
             Write-Succes "Réglages Toshiba de référence appliqués ($blob)"
         }
         catch {
