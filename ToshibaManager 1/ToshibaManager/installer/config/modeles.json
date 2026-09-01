@@ -1,0 +1,21 @@
+{
+  "_commentaire": "Table de correspondance modele -> pilote. Regles evaluees dans l'ordre, la premiere qui correspond gagne. Le motif est une expression reguliere .NET evaluee sans tenir compte de la casse sur le modele nu, sans espaces (ex: 3525AC, 305CP).",
+  "piloteParDefaut": "Universal",
+  "regles": [
+    {
+      "motif": "^[0-9]{3,4}(CS|CP|S|P)$",
+      "pilote": "Generic",
+      "commentaire": "Imprimantes simple fonction (305CP, 338CS, 385P, 409S)"
+    },
+    {
+      "motif": "^[0-9]{4}(AC|AG|A|C|G)?$",
+      "pilote": "Universal",
+      "commentaire": "Multifonctions 4 chiffres (2525AC, 3525AC, 5015AC, 6528A)"
+    },
+    {
+      "motif": "^[0-9]{3}(AC|AG|A|C|G)?$",
+      "pilote": "Generic",
+      "commentaire": "Petits modeles 3 chiffres"
+    }
+  ]
+}

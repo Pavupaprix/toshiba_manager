@@ -1712,3 +1712,26 @@ table.ab-preview {
         transition-duration: .01ms !important;
     }
 }
+
+/* --- Tuile hub « Installer un copieur » --------------------------------- */
+
+.hub-choice:nth-child(3) { animation-delay: .16s; }
+
+.hub-choice--printer::before {
+    background: linear-gradient(135deg, rgba(237, 137, 79, .10), rgba(249, 90, 106, .05));
+}
+
+.hub-choice--printer:hover { border-color: rgba(237, 137, 79, .55); }
+
+.hub-choice--printer .hub-choice-icon {
+    background: linear-gradient(135deg, #ed894f, #f95a6a);
+    box-shadow: 0 8px 20px rgba(237, 137, 79, .35);
+}
+
+.hub-choice--printer:hover .hub-choice-arrow {
+    color: #d9662c;
+    transform: translateX(6px);
+}
+
+[data-theme="dark"] .hub-choice--printer::before { background: rgba(237, 137, 79, .10); }
+[data-theme="dark"] .hub-choice--printer:hover { border-color: rgba(255, 168, 120, .55); }

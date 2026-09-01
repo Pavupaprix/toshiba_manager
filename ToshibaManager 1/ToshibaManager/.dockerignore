@@ -1,6 +1,10 @@
 # Données runtime — remplacées par le volume nommé toshiba_data
 uploads/
 
+# Archives de pilotes : montées au runtime, jamais dans l'image (~215 Mo)
+drivers/
+installer/devmode/*.bak
+
 # Python
 __pycache__/
 *.pyc

@@ -11,8 +11,9 @@ RUN useradd --create-home --uid 1000 toshibamanager
 # Code applicatif (uploads/ est exclu via .dockerignore — remplacé par un volume au runtime)
 # toshiba_template.py n'est pas copié : prototype standalone antérieur à
 # app.py, jamais importé par celui-ci, donc sans utilité dans l'image (T022).
-COPY app.py addressbook.py ./
+COPY app.py addressbook.py installer_routes.py ./
 COPY modele_xml/ ./modele_xml/
+COPY installer/ ./installer/
 COPY templates/ ./templates/
 COPY static/ ./static/
 COPY Toshiba+Partage.bat ./
