@@ -138,6 +138,14 @@ Auto) dans l'onglet Basique :
 Sans ce fichier, l'installation en couleur se termine mais avertit que la file
 restera probablement en Auto. Inutile pour les pilotes monochromes.
 
+Le blob est écrit **sans repasser par `DocumentProperties`**. Cette fonction
+renormalise la zone privée et y remet le mode Auto : mesuré sur un 2010AC, les
+octets 280 et 284 revenaient à 1 dans les trois emplacements de stockage. En
+écriture directe ils restent à 0, donc en Couleur. La validation n'est reprise
+que si la taille du blob ne correspond pas à celle attendue par le pilote
+installé, cas où une écriture brute serait risquée ; un avertissement le signale
+alors.
+
 Le recto/verso, lui, ne demande aucune capture supplémentaire : `dmDuplex` est
 respecté par le pilote, vérifié sur matériel.
 

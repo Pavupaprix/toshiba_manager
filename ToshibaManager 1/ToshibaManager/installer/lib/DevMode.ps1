@@ -197,9 +197,22 @@ namespace OMB
             }
         }
 
-        // machineDefaults = true  : defauts de l'imprimante (PRINTER_INFO_2), requiert l'elevation.
-        // machineDefaults = false : defauts de l'utilisateur courant (PRINTER_INFO_9).
-        public static void Apply(string printer, byte[] devmode, bool machineDefaults)
+        public static int TailleAttendue(string printer)
+        {
+            IntPtr handle = Open(printer, PRINTER_ACCESS_USE);
+            try { return RequiredSize(handle, printer); }
+            finally { ClosePrinter(handle); }
+        }
+
+        // machineDefaults = true  : defaut global de la file (PRINTER_INFO_8).
+        // machineDefaults = false : preferences de l'utilisateur (PRINTER_INFO_9).
+        //
+        // valider = false ecrit le DEVMODE tel quel. Indispensable pour les
+        // captures de reference : DocumentProperties renormalise la zone privee
+        // du pilote Toshiba et y perd le mode Couleur, qui retombe alors sur
+        // Auto. Mesure a l'appui, l'ecriture directe le conserve dans les trois
+        // emplacements de stockage.
+        public static void Apply(string printer, byte[] devmode, bool machineDefaults, bool valider)
         {
             if (devmode == null || devmode.Length < 72)
             {
@@ -216,14 +229,19 @@ namespace OMB
                 Marshal.Copy(devmode, 0, inBuffer, devmode.Length);
                 WriteDeviceName(inBuffer, printer);
 
-                // DM_IN_BUFFER | DM_OUT_BUFFER : le pilote valide et normalise le
-                // DEVMODE de reference avant qu'on ne l'ecrive.
-                int size = RequiredSize(handle, printer);
-                outBuffer = Marshal.AllocHGlobal(size);
-                int result = DocumentProperties(IntPtr.Zero, handle, printer, outBuffer, inBuffer, DM_IN_BUFFER | DM_OUT_BUFFER);
-                if (result != 1)
+                IntPtr source = inBuffer;
+                if (valider)
                 {
-                    throw new Exception("Le pilote a refuse le DEVMODE de reference pour '" + printer + "' (retour " + result + ").");
+                    // DM_IN_BUFFER | DM_OUT_BUFFER : le pilote valide et
+                    // normalise le DEVMODE avant qu'on ne l'ecrive.
+                    int size = RequiredSize(handle, printer);
+                    outBuffer = Marshal.AllocHGlobal(size);
+                    int result = DocumentProperties(IntPtr.Zero, handle, printer, outBuffer, inBuffer, DM_IN_BUFFER | DM_OUT_BUFFER);
+                    if (result != 1)
+                    {
+                        throw new Exception("Le pilote a refuse le DEVMODE de reference pour '" + printer + "' (retour " + result + ").");
+                    }
+                    source = outBuffer;
                 }
 
                 // Niveau 8 = PRINTER_INFO_8, le defaut global de la file.
@@ -233,7 +251,7 @@ namespace OMB
                 // l'ecriture et HKLM reste inchange.
                 int niveau = machineDefaults ? 8 : 9;
                 info = Marshal.AllocHGlobal(IntPtr.Size);
-                Marshal.WriteIntPtr(info, 0, outBuffer);
+                Marshal.WriteIntPtr(info, 0, source);
                 if (!SetPrinter(handle, niveau, info, 0))
                 {
                     throw new Exception("SetPrinter niveau " + niveau + " a echoue (code " + Marshal.GetLastWin32Error() + ").");
@@ -331,10 +349,20 @@ function Import-PrinterDevMode {
         $data = Set-DevModeReglages -Data $data -Couleur $Couleur -RectoVerso $RectoVerso
     }
 
+    # Le DEVMODE de reference vient deja du pilote : le refaire valider par
+    # DocumentProperties ne corrige rien et lui fait perdre le mode Couleur.
+    # On n'accepte l'ecriture directe que si la taille correspond exactement a
+    # ce que le pilote installe attend, sinon on repasse par la validation.
+    $attendue = [OMB.PrinterDevMode]::TailleAttendue($PrinterName)
+    $valider = $data.Length -ne $attendue
+    if ($valider) {
+        Write-Warning ("DEVMODE de reference de {0} octets alors que le pilote en attend {1} : validation par le pilote, le mode Couleur peut retomber sur Auto." -f $data.Length, $attendue)
+    }
+
     # Defauts machine d'abord (visibles par tous les utilisateurs du poste),
     # puis defauts de l'utilisateur courant qui priment a l'impression.
-    [OMB.PrinterDevMode]::Apply($PrinterName, $data, $true)
-    [OMB.PrinterDevMode]::Apply($PrinterName, $data, $false)
+    [OMB.PrinterDevMode]::Apply($PrinterName, $data, $true, $valider)
+    [OMB.PrinterDevMode]::Apply($PrinterName, $data, $false, $valider)
 }
 
 function Sync-PrinterUserDefaults {
@@ -349,7 +377,7 @@ function Sync-PrinterUserDefaults {
 
     Initialize-DevModeInterop
     $data = [OMB.PrinterDevMode]::ExportPrinterDefaults($PrinterName)
-    [OMB.PrinterDevMode]::Apply($PrinterName, $data, $false)
+    [OMB.PrinterDevMode]::Apply($PrinterName, $data, $false, $false)
 }
 
 function Test-PrinterDevModeCoherence {
