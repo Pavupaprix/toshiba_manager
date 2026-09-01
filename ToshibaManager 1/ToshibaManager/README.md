@@ -68,6 +68,22 @@ archive, recalculer son empreinte et la reporter dans
 Get-FileHash '.\drivers\<archive>.zip' -Algorithm SHA256
 ```
 
+### Mise en cache
+
+`/installer/toolkit.zip` et le `.bat` généré sont servis en `Cache-Control:
+no-store`. Cloudflare met les `.zip` en cache quatre heures par défaut, et un
+toolkit périmé installe des réglages qui ne sont plus ceux demandés — le cas
+s'est produit. L'URL du toolkit dans le `.bat` porte en plus une empreinte du
+contenu (`?v=<sha256 tronqué>`), donc un cache qui ignorerait les en-têtes
+sert quand même la bonne version.
+
+L'archive est construite de façon déterministe (dates figées dans le ZIP), si
+bien qu'une reconstruction de l'image sans changement de contenu produit la
+même empreinte et n'oblige aucun poste à retélécharger.
+
+Les archives de pilotes, elles, restent cachables : leur nom porte la version
+du pilote, et le script contrôle le SHA256 après téléchargement.
+
 ### Reverse proxy
 
 Les chemins `/installer` et `/installer/*` doivent rester accessibles **sans

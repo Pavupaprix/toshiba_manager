@@ -12,6 +12,7 @@ Tout le code de cette fonctionnalité vit ici : app.py ne fait qu'enregistrer
 le blueprint, ce qui garantit que le reste de l'application n'est pas touché.
 """
 
+import hashlib
 import io
 import ipaddress
 import json
@@ -109,6 +110,9 @@ rem regenerer depuis {base_url}/installer
 set "IP={ip}"
 set "OPTIONS={options}"
 set "BASE={base_url}/installer"
+rem Empreinte du toolkit : sans elle, un cache intermediaire peut renvoyer une
+rem version anterieure du script, avec d'autres reglages par defaut.
+set "VERSION={version}"
 set "TRAVAIL=%TEMP%\InstallCopieurToshiba\%RANDOM%%RANDOM%"
 
 net session >nul 2>&1
@@ -128,7 +132,7 @@ mkdir "%TRAVAIL%" 2>nul
 echo   Telechargement des outils d'installation...
 rem Une seule ligne par commande : dans cmd, un ^ place a l'interieur de
 rem guillemets est un caractere litteral, pas une continuation de ligne.
-powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '%BASE%/toolkit.zip' -OutFile '%TRAVAIL%\toolkit.zip' -UseBasicParsing -TimeoutSec 120"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -Uri '%BASE%/toolkit.zip?v=%VERSION%' -OutFile '%TRAVAIL%\toolkit.zip' -UseBasicParsing -TimeoutSec 120"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -LiteralPath '%TRAVAIL%\toolkit.zip' -DestinationPath '%TRAVAIL%' -Force"
 
 if not exist "%TRAVAIL%\Install-CopieurToshiba.ps1" (
@@ -150,7 +154,8 @@ exit /b %CODE%
 
 
 def generer_bat(ip, options):
-    return GABARIT_BAT.format(ip=ip, options=options,
+    _, version = construire_toolkit()
+    return GABARIT_BAT.format(ip=ip, options=options, version=version,
                               base_url=_url_base()).replace('\n', '\r\n')
 
 
@@ -207,33 +212,79 @@ def telecharger_bat():
     return current_app.response_class(
         contenu.encode('ascii', 'replace'),
         mimetype='application/octet-stream',
-        headers={'Content-Disposition': f'attachment; filename="{nom}"'})
+        headers=dict(SANS_CACHE,
+                     **{'Content-Disposition': f'attachment; filename="{nom}"'}))
+
+
+def _fichiers_toolkit():
+    """Chemins à embarquer, en couples (chemin disque, nom dans l'archive)."""
+    for nom in TOOLKIT_FICHIERS:
+        chemin = os.path.join(INSTALLER_DIR, nom)
+        if os.path.isfile(chemin):
+            yield chemin, nom
+    for dossier in TOOLKIT_DOSSIERS:
+        racine = os.path.join(INSTALLER_DIR, dossier)
+        if not os.path.isdir(racine):
+            continue
+        for fichier in sorted(os.listdir(racine)):
+            chemin = os.path.join(racine, fichier)
+            # Les sauvegardes horodatées des DEVMODE n'ont rien à faire ici.
+            if os.path.isfile(chemin) and not fichier.endswith('.bak'):
+                yield chemin, f'{dossier}/{fichier}'
+
+
+_toolkit_cache = {}
+
+
+def construire_toolkit():
+    """Archive du dossier installer/, construite en mémoire et retenue.
+
+    Renvoie (octets, empreinte). L'empreinte va dans l'URL du .bat généré :
+    Cloudflare met les .zip en cache pendant quatre heures, et une version
+    figée du toolkit installerait des réglages qui ne sont plus ceux demandés.
+    Un nom de fichier inchangé mais une requête différente suffit à forcer la
+    récupération de la bonne version.
+    """
+    signature = tuple((nom, os.path.getmtime(c), os.path.getsize(c))
+                      for c, nom in _fichiers_toolkit())
+    if _toolkit_cache.get('signature') == signature:
+        return _toolkit_cache['donnees'], _toolkit_cache['empreinte']
+
+    memoire = io.BytesIO()
+    with zipfile.ZipFile(memoire, 'w', zipfile.ZIP_DEFLATED) as archive:
+        for chemin, nom in _fichiers_toolkit():
+            # Date figée : sans elle l'archive change à chaque reconstruction de
+            # l'image, et l'empreinte avec, obligeant tous les postes à
+            # retélécharger un toolkit pourtant identique.
+            entree = zipfile.ZipInfo(nom, date_time=(1980, 1, 1, 0, 0, 0))
+            entree.compress_type = zipfile.ZIP_DEFLATED
+            entree.external_attr = 0o644 << 16
+            with open(chemin, 'rb') as f:
+                archive.writestr(entree, f.read())
+
+    donnees = memoire.getvalue()
+    empreinte = hashlib.sha256(donnees).hexdigest()[:12]
+    _toolkit_cache.update(signature=signature, donnees=donnees, empreinte=empreinte)
+    return donnees, empreinte
+
+
+# Interdit la mise en cache par les intermédiaires : Cloudflare met les .zip en
+# cache par défaut, ce qui a déjà servi un toolkit périmé à un poste client.
+SANS_CACHE = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, private, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+}
 
 
 @installer_bp.route('/toolkit.zip')
 def toolkit():
-    """Archive du dossier installer/, construite en mémoire à la demande."""
-    memoire = io.BytesIO()
-    with zipfile.ZipFile(memoire, 'w', zipfile.ZIP_DEFLATED) as archive:
-        for nom in TOOLKIT_FICHIERS:
-            chemin = os.path.join(INSTALLER_DIR, nom)
-            if os.path.isfile(chemin):
-                archive.write(chemin, nom)
-        for dossier in TOOLKIT_DOSSIERS:
-            racine = os.path.join(INSTALLER_DIR, dossier)
-            if not os.path.isdir(racine):
-                continue
-            for fichier in sorted(os.listdir(racine)):
-                chemin = os.path.join(racine, fichier)
-                # Les sauvegardes horodatées des DEVMODE n'ont rien à faire ici.
-                if os.path.isfile(chemin) and not fichier.endswith('.bak'):
-                    archive.write(chemin, f'{dossier}/{fichier}')
-
-    memoire.seek(0)
-    return current_app.response_class(
-        memoire.read(),
-        mimetype='application/zip',
-        headers={'Content-Disposition': 'attachment; filename="toolkit.zip"'})
+    donnees, empreinte = construire_toolkit()
+    entetes = dict(SANS_CACHE)
+    entetes['Content-Disposition'] = 'attachment; filename="toolkit.zip"'
+    entetes['X-Toolkit-Version'] = empreinte
+    return current_app.response_class(donnees, mimetype='application/zip',
+                                      headers=entetes)
 
 
 @installer_bp.route('/drivers/<path:nom>')
