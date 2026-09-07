@@ -13,14 +13,12 @@
             <span class="icon-moon">🌙</span>
             <span class="icon-sun">☀️</span>
         </button>
-        <a href="{{ url_for('download_bat') }}" download="Toshiba+Partage.bat" class="topbar-logo-link" title="Télécharger Toshiba+Partage.bat">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Toshiba Scan" class="topbar-logo">
-        </a>
         <span class="topbar-spacer"></span>
-        <div class="topbar-brand">
+        <a class="topbar-brand" href="https://omb-informatique.fr/"
+           target="_blank" rel="noopener noreferrer" title="omb-informatique.fr">
             <img src="{{ url_for('static', filename='omb-logo.jpg') }}" alt="OMB Informatique" class="topbar-brand-logo">
             <span class="topbar-brand-name">OMB&nbsp;<span class="topbar-brand-accent">INFORMATIQUE</span></span>
-        </div>
+        </a>
     </div>
     <div class="container smtp-page">
         <a class="hub-back-btn" href="{{ url_for('hub') }}"><span aria-hidden="true">🏠</span> HUB</a>
@@ -49,6 +47,7 @@
 
             <div id="abBody" class="ab-body" hidden>
                 <div class="ab-feedback" id="abFeedback" hidden></div>
+                <div class="ab-issues-banner" id="abIssuesBanner" hidden></div>
 
                 <div class="ab-mapping">
                     <div class="form-group">
@@ -81,6 +80,9 @@
                     <div class="checkbox-group">
                         <label><input type="checkbox" id="abCombined"> Nom et prénom dans la même case</label>
                     </div>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="abStripAccents" checked> Remplacer les accents (é→e)</label>
+                    </div>
                     <div class="form-group ab-order" id="abOrderWrap" hidden>
                         <label for="abOrder">Sens du nom et prénom</label>
                         <select id="abOrder">
@@ -95,11 +97,13 @@
                     <div class="ab-preview-head">
                         <h3>Aperçu</h3>
                         <span class="ab-count" id="abCount"></span>
+                        <span class="ab-check-legend"><input type="checkbox" checked> = exclu du CSV</span>
                     </div>
                     <div class="ab-preview-scroll">
                         <table class="ab-preview">
                             <thead>
                                 <tr>
+                                    <th class="ab-th-check"><input type="checkbox" id="abCheckAll" title="Tout sélectionner / désélectionner"></th>
                                     <th>Prénom</th>
                                     <th>Nom</th>
                                     <th>E-mail</th>

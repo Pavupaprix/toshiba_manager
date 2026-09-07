@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
+import hashlib
 import xml.etree.ElementTree as ET
 import os
 import smtplib
@@ -22,6 +23,35 @@ XML_FILE = os.path.join(app.config['UPLOAD_FOLDER'], 'templates.xml')
 
 # Distribution du script d'installation des copieurs (voir installer_routes.py).
 app.register_blueprint(installer_bp)
+
+# Cloudflare met les .css et .js en cache plusieurs heures, quoi que renvoie
+# l'application : une feuille de style périmée a déjà été servie après un
+# déploiement, avec des pages à jour mais sans les règles correspondantes.
+# Chaque fichier statique porte donc une empreinte de son contenu dans son URL,
+# qui change dès que le fichier change. L'empreinte n'est recalculée que si la
+# date ou la taille du fichier a bougé.
+_EMPREINTES_STATIQUES = {}
+
+@app.url_defaults
+def _versionner_fichiers_statiques(endpoint, values):
+    if endpoint != 'static' or 'filename' not in values:
+        return
+
+    chemin = os.path.join(app.static_folder, values['filename'])
+    try:
+        infos = os.stat(chemin)
+    except OSError:
+        return
+    signature = (infos.st_mtime, infos.st_size)
+
+    connue = _EMPREINTES_STATIQUES.get(values['filename'])
+    if not connue or connue[0] != signature:
+        with open(chemin, 'rb') as f:
+            empreinte = hashlib.sha256(f.read()).hexdigest()[:8]
+        connue = (signature, empreinte)
+        _EMPREINTES_STATIQUES[values['filename']] = connue
+
+    values['v'] = connue[1]
 
 # -------------------------
 # Validation du template par défaut au démarrage (FR-009, constitution
@@ -55,6 +85,12 @@ def healthz():
     return jsonify({'status': 'error', 'error': 'template par défaut invalide ou manquant'}), 503
 
 @app.route('/')
+def racine():
+    # Le hub est le point d'entree du service. La page des modeles garde le nom
+    # d'endpoint « index », donc les url_for('index') existants suivent tout seuls.
+    return redirect(url_for('hub'))
+
+@app.route('/template')
 def index():
     return render_template('index.html')
 
@@ -190,7 +226,9 @@ def addressbook_generate():
     try:
         mapping = data.get('mapping') or {}
         order = data.get('order', 'auto')
-        csv_content, stats = addressbook.generate_csv(path, mapping, order)
+        excluded_rows = data.get('excludedRows', [])
+        strip_accents_flag = data.get('stripAccents', True)
+        csv_content, stats = addressbook.generate_csv(path, mapping, order, excluded_rows, strip_accents_flag)
         fname = 'ADDR_' + datetime.now().strftime('%d%m%y') + '.csv'
         return jsonify({'success': True, 'csv': csv_content, 'stats': stats, 'filename': fname}), 200
     except Exception as e:

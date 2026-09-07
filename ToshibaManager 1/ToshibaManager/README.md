@@ -81,6 +81,14 @@ L'archive est construite de façon déterministe (dates figées dans le ZIP), si
 bien qu'une reconstruction de l'image sans changement de contenu produit la
 même empreinte et n'oblige aucun poste à retélécharger.
 
+Le même problème touchait les fichiers de `static/` : Cloudflare a servi un
+`style.css` périmé pendant des heures après un déploiement, donnant des pages
+à jour mais sans les règles correspondantes. Un `url_defaults` dans `app.py`
+ajoute désormais une empreinte du contenu à chaque URL statique
+(`/static/style.css?v=1af2038a`), recalculée seulement quand la date ou la
+taille du fichier change. Aucune purge n'est nécessaire après un déploiement :
+l'URL change, donc le cache est contourné d'office.
+
 Les archives de pilotes, elles, restent cachables : leur nom porte la version
 du pilote, et le script contrôle le SHA256 après téléchargement.
 

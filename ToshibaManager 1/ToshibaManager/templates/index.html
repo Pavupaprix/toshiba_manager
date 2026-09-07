@@ -13,14 +13,12 @@
             <span class="icon-moon">🌙</span>
             <span class="icon-sun">☀️</span>
         </button>
-        <a href="{{ url_for('download_bat') }}" download="Toshiba+Partage.bat" class="topbar-logo-link" title="Télécharger Toshiba+Partage.bat">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Toshiba Scan" class="topbar-logo">
-        </a>
         <span class="topbar-spacer"></span>
-        <div class="topbar-brand">
+        <a class="topbar-brand" href="https://omb-informatique.fr/"
+           target="_blank" rel="noopener noreferrer" title="omb-informatique.fr">
             <img src="{{ url_for('static', filename='omb-logo.jpg') }}" alt="OMB Informatique" class="topbar-brand-logo">
             <span class="topbar-brand-name">OMB&nbsp;<span class="topbar-brand-accent">INFORMATIQUE</span></span>
-        </div>
+        </a>
     </div>
     <div class="container">
         <a class="hub-back-btn" href="{{ url_for('hub') }}"><span aria-hidden="true">🏠</span> HUB</a>
