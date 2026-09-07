@@ -14,7 +14,7 @@
             <span class="icon-sun">☀️</span>
         </button>
         <a href="{{ url_for('download_bat') }}" download="Toshiba+Partage.bat" class="topbar-logo-link" title="Télécharger Toshiba+Partage.bat">
-            <img src="{{ url_for('static', filename='logo_disquette.png') }}" alt="Télécharger Script Scan" class="topbar-logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Toshiba Scan" class="topbar-logo">
         </a>
         <span class="topbar-spacer"></span>
         <div class="topbar-brand">
@@ -104,19 +104,14 @@
 
         <section class="smtp-card">
             <div class="smtp-card-heading">
-                <span class="smtp-card-icon smtp-card-icon--image" aria-hidden="true">
-                    <img src="{{ url_for('static', filename='logo_disquette.png') }}" alt="">
-                </span>
+                <span class="smtp-card-icon" aria-hidden="true">💾</span>
                 <div><p class="smtp-eyebrow">OPTIONNEL</p><h2>Partage Scan vers dossier</h2></div>
             </div>
             <p>Prépare le poste à recevoir les numérisations du copieur : compte local
                dédié, dossier de destination et partage réseau.</p>
             <div class="smtp-buttons">
                 <a class="btn btn-secondary" href="{{ url_for('download_bat') }}"
-                   download="Toshiba+Partage.bat">
-                    <img src="{{ url_for('static', filename='logo_disquette.png') }}"
-                         alt="" class="btn-icon"> Partage Scan vers dossier
-                </a>
+                   download="Toshiba+Partage.bat">💾 Partage Scan vers dossier</a>
             </div>
             <p><small>À lancer en tant qu'administrateur sur le poste, indépendamment de
                l'installation du copieur.</small></p>

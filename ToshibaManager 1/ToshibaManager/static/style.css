@@ -1899,16 +1899,3 @@ table.ab-preview {
 
 /* .btn est prevu pour <button> : un <a> garde son soulignement par defaut. */
 a.btn { text-decoration: none; }
-
-.btn-icon {
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
-}
-
-/* Variante de la pastille d'en-tete accueillant une image plutot qu'un emoji. */
-.smtp-card-icon--image img {
-    width: 26px;
-    height: 26px;
-    object-fit: contain;
-}
