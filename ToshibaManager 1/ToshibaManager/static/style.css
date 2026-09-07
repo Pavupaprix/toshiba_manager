@@ -167,29 +167,13 @@
 [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
 [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
 
-.topbar-logo-link {
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-    line-height: 0;
-}
-
-.topbar-logo {
-    height: 40px;
-    width: auto;
-    max-width: 220px;
-    object-fit: contain;
-    border-radius: 8px;
-    transition: opacity var(--transition);
-}
-
-.topbar-logo:hover { opacity: .85; }
-
 .topbar-spacer { flex: 1; }
 
 /* Badge de marque OMB Informatique (coin haut droit) */
 .topbar-brand {
     display: inline-flex;
+    text-decoration: none;
+    color: inherit;
     align-items: center;
     gap: 10px;
     padding: 6px 14px 6px 8px;
