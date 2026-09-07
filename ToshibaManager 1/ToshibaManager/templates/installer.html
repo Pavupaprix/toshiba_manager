@@ -41,7 +41,7 @@
         {% endif %}
 
         <form method="post" action="{{ url_for('installer.telecharger_bat') }}">
-            <main class="smtp-grid">
+            <main class="smtp-grid smtp-grid--trois">
                 <section class="smtp-card">
                     <div class="smtp-card-heading">
                         <span class="smtp-card-icon" aria-hidden="true">🖨️</span>
@@ -95,27 +95,27 @@
                        l'impression</em> de la machine. Le format A4 et l'impression intelligente
                        sont appliqués dans tous les cas.</small></p>
                 </section>
+
+                <section class="smtp-card">
+                    <div class="smtp-card-heading">
+                        <span class="smtp-card-icon" aria-hidden="true">💾</span>
+                        <div><p class="smtp-eyebrow">OPTIONNEL</p><h2>Partage Scan vers dossier</h2></div>
+                    </div>
+                    <p>Prépare le poste à recevoir les numérisations du copieur : compte
+                       local dédié, dossier de destination et partage réseau.</p>
+                    <div class="smtp-buttons">
+                        <a class="btn btn-secondary" href="{{ url_for('download_bat') }}"
+                           download="Toshiba+Partage.bat">💾 Partage Scan vers dossier</a>
+                    </div>
+                    <p><small>Indépendant de l'installation du copieur. À lancer en tant
+                       qu'administrateur sur le poste.</small></p>
+                </section>
             </main>
 
             <div class="smtp-buttons">
                 <button type="submit" class="btn btn-primary">⬇️ Générer le fichier d'installation</button>
             </div>
         </form>
-
-        <section class="smtp-card">
-            <div class="smtp-card-heading">
-                <span class="smtp-card-icon" aria-hidden="true">💾</span>
-                <div><p class="smtp-eyebrow">OPTIONNEL</p><h2>Partage Scan vers dossier</h2></div>
-            </div>
-            <p>Prépare le poste à recevoir les numérisations du copieur : compte local
-               dédié, dossier de destination et partage réseau.</p>
-            <div class="smtp-buttons">
-                <a class="btn btn-secondary" href="{{ url_for('download_bat') }}"
-                   download="Toshiba+Partage.bat">💾 Partage Scan vers dossier</a>
-            </div>
-            <p><small>À lancer en tant qu'administrateur sur le poste, indépendamment de
-               l'installation du copieur.</small></p>
-        </section>
 
         <section class="smtp-card smtp-message">
             <div><strong>Sur le poste de l'utilisateur</strong></div>

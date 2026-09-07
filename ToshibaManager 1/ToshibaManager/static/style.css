@@ -1895,6 +1895,28 @@ table.ab-preview {
     color: #fecaca;
 }
 
+/* --- Page Installer un copieur : trois cartes de front ------------------ */
+
+.smtp-grid--trois {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 1280px;
+}
+
+/* En dessous, trois colonnes deviennent illisibles : on repasse a deux, puis a
+   une seule. Ces deux blocs sont plus bas dans le fichier que la regle
+   generique .smtp-grid a 700px, donc ils la supplantent : la version a une
+   colonne doit etre redite ici, sans quoi le telephone garde deux colonnes. */
+@media (max-width: 1150px) {
+    .smtp-grid--trois {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 960px;
+    }
+}
+
+@media (max-width: 700px) {
+    .smtp-grid--trois { grid-template-columns: 1fr; }
+}
+
 /* --- Bouton « Partage Scan vers dossier » ------------------------------- */
 
 /* .btn est prevu pour <button> : un <a> garde son soulignement par defaut. */
