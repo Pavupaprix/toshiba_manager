@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 import xml.etree.ElementTree as ET
 import os
 import smtplib
@@ -55,6 +55,12 @@ def healthz():
     return jsonify({'status': 'error', 'error': 'template par défaut invalide ou manquant'}), 503
 
 @app.route('/')
+def racine():
+    # Le hub est le point d'entree du service. La page des modeles garde le nom
+    # d'endpoint « index », donc les url_for('index') existants suivent tout seuls.
+    return redirect(url_for('hub'))
+
+@app.route('/template')
 def index():
     return render_template('index.html')
 
@@ -190,7 +196,9 @@ def addressbook_generate():
     try:
         mapping = data.get('mapping') or {}
         order = data.get('order', 'auto')
-        csv_content, stats = addressbook.generate_csv(path, mapping, order)
+        excluded_rows = data.get('excludedRows', [])
+        strip_accents_flag = data.get('stripAccents', True)
+        csv_content, stats = addressbook.generate_csv(path, mapping, order, excluded_rows, strip_accents_flag)
         fname = 'ADDR_' + datetime.now().strftime('%d%m%y') + '.csv'
         return jsonify({'success': True, 'csv': csv_content, 'stats': stats, 'filename': fname}), 200
     except Exception as e:

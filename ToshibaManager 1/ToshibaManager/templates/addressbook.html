@@ -49,6 +49,7 @@
 
             <div id="abBody" class="ab-body" hidden>
                 <div class="ab-feedback" id="abFeedback" hidden></div>
+                <div class="ab-issues-banner" id="abIssuesBanner" hidden></div>
 
                 <div class="ab-mapping">
                     <div class="form-group">
@@ -81,6 +82,9 @@
                     <div class="checkbox-group">
                         <label><input type="checkbox" id="abCombined"> Nom et prénom dans la même case</label>
                     </div>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="abStripAccents" checked> Remplacer les accents (é→e)</label>
+                    </div>
                     <div class="form-group ab-order" id="abOrderWrap" hidden>
                         <label for="abOrder">Sens du nom et prénom</label>
                         <select id="abOrder">
@@ -95,11 +99,13 @@
                     <div class="ab-preview-head">
                         <h3>Aperçu</h3>
                         <span class="ab-count" id="abCount"></span>
+                        <span class="ab-check-legend"><input type="checkbox" checked> = exclu du CSV</span>
                     </div>
                     <div class="ab-preview-scroll">
                         <table class="ab-preview">
                             <thead>
                                 <tr>
+                                    <th class="ab-th-check"><input type="checkbox" id="abCheckAll" title="Tout sélectionner / désélectionner"></th>
                                     <th>Prénom</th>
                                     <th>Nom</th>
                                     <th>E-mail</th>
