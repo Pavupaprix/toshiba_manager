@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installer un poste — Windows</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>(function(){var t=localStorage.getItem('ts-theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+</head>
+<body class="smtp-page">
+    <div class="topbar">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Basculer le thème">
+            <span class="icon-moon">🌙</span>
+            <span class="icon-sun">☀️</span>
+        </button>
+        <span class="topbar-spacer"></span>
+        <a class="topbar-brand" href="https://omb-informatique.fr/"
+           target="_blank" rel="noopener noreferrer" title="omb-informatique.fr">
+            <img src="{{ url_for('static', filename='omb-logo.jpg') }}" alt="OMB Informatique" class="topbar-brand-logo">
+            <span class="topbar-brand-name">OMB&nbsp;<span class="topbar-brand-accent">INFORMATIQUE</span></span>
+        </a>
+    </div>
+
+    <div class="container">
+        <a class="hub-back-btn" href="{{ url_for('hub') }}"><span aria-hidden="true">🏠</span> HUB</a>
+
+        <header class="smtp-header">
+            <div class="smtp-kicker">Poste client</div>
+            <h1>Installer un <span class="accent">poste</span></h1>
+            <p class="smtp-subtitle">Composez l'installation, récupérez un ZIP prêt à lancer sur le poste de l'utilisateur.</p>
+        </header>
+
+        <form method="post" action="{{ url_for('poste.telecharger_zip') }}" id="formPoste">
+            <input type="hidden" name="comptes" id="comptesJson">
+
+            <!-- ============ 1. Informations générales ============ -->
+            <p class="poste-etape">1 — Informations générales</p>
+            <section class="smtp-card">
+                <div class="smtp-card-heading">
+                    <span class="smtp-card-icon" aria-hidden="true">🏢</span>
+                    <div><p class="smtp-eyebrow">LE CLIENT</p><h2>Qui, et sous quel nom</h2></div>
+                </div>
+
+                <div class="poste-grille">
+                    <div>
+                        <label for="client">Nom du client</label>
+                        <input id="client" name="client" type="text" placeholder="Dupont &amp; Fils" maxlength="80">
+                        <p><small>Sert à nommer le ZIP et apparaît dans le résumé du script.</small></p>
+                    </div>
+
+                    <div>
+                        <label for="trigramme">Trigramme <small>— 2 à 6 caractères</small></label>
+                        <input id="trigramme" name="trigramme" type="text" placeholder="DUP"
+                               maxlength="6" pattern="^[A-Za-z0-9]{2,6}$"
+                               title="2 à 6 lettres ou chiffres, sans accent ni espace">
+                        <p><small>Seule partie du nom du client qui entre dans le nom du poste.</small></p>
+                    </div>
+
+                    <div>
+                        <label for="codeClient">Code client</label>
+                        <input id="codeClient" name="codeClient" type="text" placeholder="51940"
+                               maxlength="16" pattern="^[A-Za-z0-9-]{1,16}$"
+                               title="Lettres, chiffres et tirets">
+                        <p><small>Donne le mot de passe <code>OmbI@&lt;code&gt;</code> pour AnyDesk et
+                           le compte <code>adminomb</code>.</small></p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="smtp-card">
+                <div class="smtp-card-heading">
+                    <span class="smtp-card-icon" aria-hidden="true">🏷️</span>
+                    <div><p class="smtp-eyebrow">NOM DE LA MACHINE</p><h2>Renommer le poste</h2></div>
+                </div>
+
+                <label class="poste-case">
+                    <input type="checkbox" name="renommerPoste" id="renommerPoste" value="1">
+                    <span>Renommer le poste</span>
+                </label>
+
+                <div class="poste-nom-ligne">
+                    <div class="poste-nom-champ">
+                        <label for="nomPoste">Nom du poste</label>
+                        <input id="nomPoste" name="nomPoste" type="text" maxlength="15"
+                               pattern="^[A-Za-z0-9-]{1,15}$" disabled
+                               title="15 caractères maximum, lettres, chiffres et tirets">
+                        <p class="poste-compteur"><small><span id="nomPosteCompteur">0</span>/15 caractères</small></p>
+                    </div>
+                    <div class="poste-nom-roue">
+                        <label for="numeroPoste">N°</label>
+                        <input id="numeroPoste" type="number" min="1" max="99" value="1" step="1" disabled>
+                    </div>
+                </div>
+                <p><small>Proposé au format <code>{{ annee_mois }}-TRIGRAMME-NN</code>, modifiable à la main.
+                   Windows plafonne les noms de poste à 15 caractères : la proposition est
+                   tronquée si elle déborde. Le renommage exige un redémarrage.</small></p>
+            </section>
+
+            <!-- ============ 2. Applications ============ -->
+            <p class="poste-etape">2 — Applications à installer</p>
+
+            <main class="smtp-grid smtp-grid--trois">
+                {% for categorie in categories %}
+                <section class="smtp-card">
+                    <div class="smtp-card-heading">
+                        <span class="smtp-card-icon" aria-hidden="true">{{ categorie.icone }}</span>
+                        <div><p class="smtp-eyebrow">CATÉGORIE</p><h2>{{ categorie.nom }}</h2></div>
+                    </div>
+
+                    {% for app in applications if app.categorie == categorie.id %}
+                    <label class="poste-case {% if not app.disponible %}poste-case--indisponible{% endif %}">
+                        <input type="checkbox" name="app" value="{{ app.id }}"
+                               data-app="{{ app.id }}"
+                               {% if not app.disponible %}disabled{% endif %}>
+                        <span>
+                            <strong>{{ app.nom }}</strong>
+                            {% if not app.disponible %}<em> — installeur absent du serveur</em>{% endif %}
+                            <small>{{ app.description }}</small>
+                        </span>
+                    </label>
+
+                    {% if app.id == 'chrome' %}
+                    <div class="poste-sous-option" id="blocChrome" hidden>
+                        <label class="poste-case">
+                            <input type="checkbox" name="navigateurParDefaut" value="1" checked>
+                            <span>Définir Chrome comme navigateur par défaut</span>
+                        </label>
+                    </div>
+                    {% endif %}
+
+                    {% if app.id == 'anydesk' %}
+                    <div class="poste-sous-option" id="blocAnyDesk" hidden>
+                        <label for="anydeskMotDePasse">Mot de passe d'accès sans surveillance</label>
+                        <input id="anydeskMotDePasse" name="anydeskMotDePasse" type="text"
+                               placeholder="renseignez le code client" autocomplete="off">
+                        <p><small>Pré-rempli depuis le code client. Ce mot de passe donne le
+                           contrôle total non surveillé du poste à distance.</small></p>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if categorie.id == 'bureautique' %}
+                    <p class="poste-avertissement" id="avertPdf" hidden>
+                        <small>Acrobat et Foxit sont tous les deux cochés : c'est le dernier
+                        installé qui prendra l'association <code>.pdf</code>.</small>
+                    </p>
+                    {% endif %}
+                </section>
+                {% endfor %}
+            </main>
+
+            <!-- ============ 3. Configuration Windows ============ -->
+            <p class="poste-etape">3 — Configuration Windows</p>
+
+            <main class="smtp-grid">
+                <section class="smtp-card">
+                    <div class="smtp-card-heading">
+                        <span class="smtp-card-icon" aria-hidden="true">⚙️</span>
+                        <div><p class="smtp-eyebrow">RÉGLAGES</p><h2>Système</h2></div>
+                    </div>
+
+                    <label for="uac">Contrôle de compte d'utilisateur (UAC)</label>
+                    <select id="uac" name="uac">
+                        <option value="inchange" selected>Ne pas y toucher</option>
+                        <option value="sansConfirmation">Ne plus demander de confirmation</option>
+                        <option value="desactive">Désactiver complètement</option>
+                    </select>
+                    <p class="poste-avertissement" id="avertUac" hidden>
+                        <small><strong>Attention.</strong> La désactivation complète
+                        (<code>EnableLUA=0</code>) empêche toutes les applications du Store de
+                        s'ouvrir — Paramètres, Photos, Calculatrice comprises — et exige un
+                        redémarrage. « Ne plus demander de confirmation » donne le même confort
+                        sans cet effet de bord.</small>
+                    </p>
+
+                    <label class="poste-case">
+                        <input type="checkbox" name="extensionsVisibles" value="1">
+                        <span><strong>Afficher les extensions et les fichiers cachés</strong>
+                        <small>Appliqué au technicien et aux comptes créés par le script.</small></span>
+                    </label>
+
+                    <label class="poste-case">
+                        <input type="checkbox" name="paveNumerique" value="1">
+                        <span><strong>Pavé numérique actif au démarrage</strong>
+                        <small>Verr. Num activé dès l'écran de connexion.</small></span>
+                    </label>
+
+                    <label class="poste-case">
+                        <input type="checkbox" name="supprimerPubs" value="1">
+                        <span><strong>Retirer les suggestions et publicités Windows</strong>
+                        <small>Contenu vedette, conseils et suggestions du menu Démarrer.</small></span>
+                    </label>
+
+                    <label class="poste-case">
+                        <input type="checkbox" name="desactiverDemarrageRapide" value="1">
+                        <span><strong>Désactiver le démarrage rapide</strong>
+                        <small>Pour que « Arrêter » procède à un vrai arrêt.</small></span>
+                    </label>
+
+                    <label class="poste-case">
+                        <input type="checkbox" name="desinstallerCcleaner" value="1">
+                        <span><strong>Désinstaller CCleaner</strong>
+                        <small>Les antivirus sont protégés et ne seront jamais touchés.</small></span>
+                    </label>
+                </section>
+
+                <section class="smtp-card">
+                    <div class="smtp-card-heading">
+                        <span class="smtp-card-icon" aria-hidden="true">👤</span>
+                        <div><p class="smtp-eyebrow">PROFILS</p><h2>Comptes locaux</h2></div>
+                    </div>
+
+                    <div id="listeComptes"></div>
+
+                    <div class="smtp-buttons">
+                        <button type="button" class="btn btn-secondary" id="ajouterCompte">➕ Ajouter un compte</button>
+                    </div>
+
+                    <p><small>Un mot de passe laissé vide crée un compte sans mot de passe.
+                       La connexion automatique inscrit le mot de passe en clair dans le
+                       registre du poste : à réserver aux postes en libre-service.</small></p>
+                </section>
+            </main>
+
+            <div class="smtp-buttons">
+                <button type="submit" class="btn btn-primary">⬇️ Générer le ZIP d'installation</button>
+                <button type="button" class="btn btn-secondary" id="exporterReglages">💾 Exporter les réglages</button>
+                <button type="button" class="btn btn-secondary" id="importerReglages">📂 Importer des réglages</button>
+                <input type="file" id="fichierReglages" accept="application/json,.json" hidden>
+            </div>
+
+            <section class="smtp-card smtp-message" id="messagePoste" hidden></section>
+        </form>
+
+        <section class="smtp-card smtp-message">
+            <div><strong>Sur le poste de l'utilisateur</strong></div>
+            <ol>
+                <li>Décompressez le ZIP sur le poste, puis double-cliquez sur <code>Installer-Poste.bat</code>.</li>
+                <li>Acceptez l'élévation UAC.</li>
+                <li>Le script installe les applications, applique les réglages Windows et crée
+                    les comptes, puis affiche un résumé.</li>
+                <li>Il propose enfin de supprimer le dossier : répondez <strong>oui</strong>, c'est
+                    ce qui efface les mots de passe du poste. Le journal, lui, est conservé
+                    dans <code>%ProgramData%\OMB\InstallationPoste</code> et ne contient aucun
+                    mot de passe.</li>
+            </ol>
+        </section>
+    </div>
+
+    <script>document.getElementById('themeToggle').addEventListener('click',function(){var cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',cur);localStorage.setItem('ts-theme',cur);});</script>
+    <script>window.POSTE_ANNEE_MOIS = {{ annee_mois | tojson }};</script>
+    <script src="{{ url_for('static', filename='poste.js') }}"></script>
+</body>
+</html>

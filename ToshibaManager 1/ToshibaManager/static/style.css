@@ -1947,3 +1947,163 @@ a.btn { text-decoration: none; }
     stroke-linecap: round;
     stroke-linejoin: round;
 }
+
+
+/* --- Tuile hub et page « Installer un poste » ---------------------------- */
+
+.hub-choice:nth-child(4) { animation-delay: .24s; }
+
+.hub-choice--pc::before {
+    background: linear-gradient(135deg, rgba(16, 185, 129, .10), rgba(14, 165, 165, .05));
+}
+
+.hub-choice--pc:hover { border-color: rgba(16, 185, 129, .55); }
+
+.hub-choice--pc .hub-choice-icon {
+    background: linear-gradient(135deg, #10b981, #0ea5a5);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, .35);
+}
+
+.hub-choice--pc:hover .hub-choice-arrow {
+    color: #0d9488;
+    transform: translateX(6px);
+}
+
+[data-theme="dark"] .hub-choice--pc::before { background: rgba(16, 185, 129, .10); }
+[data-theme="dark"] .hub-choice--pc:hover { border-color: rgba(52, 211, 153, .55); }
+
+/* Titre de section : separe les trois etapes de la page /poste. */
+.poste-etape {
+    margin: 34px 0 12px;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted-strong);
+}
+
+.poste-grille {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0 18px;
+}
+
+/* Case a cocher et son libelle : la description passe sous le titre. */
+.poste-case {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 10px 0;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.poste-case:hover { background: var(--surface-soft); }
+
+.poste-case input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    margin: 2px 0 0;
+    flex: 0 0 auto;
+    accent-color: var(--indigo);
+    cursor: pointer;
+}
+
+.poste-case > span {
+    display: block;
+    font-size: .92rem;
+    color: var(--ink-soft);
+}
+
+.poste-case small {
+    display: block;
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: .8rem;
+}
+
+.poste-case--indisponible {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.poste-case--indisponible em { color: var(--danger); font-style: normal; }
+
+/* Champ revele par une case (mot de passe AnyDesk, navigateur par defaut). */
+.poste-sous-option {
+    margin: 0 0 12px 34px;
+    padding: 12px 14px;
+    border-left: 3px solid var(--indigo);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--surface-soft);
+}
+
+.poste-avertissement {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--amber);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--warn-soft);
+}
+
+[data-theme="dark"] .poste-avertissement { background: rgba(245, 158, 11, .10); }
+
+.poste-avertissement small { color: var(--ink-soft); }
+
+/* Nom du poste : le champ prend la place, la roue du numero reste etroite. */
+.poste-nom-ligne {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.poste-nom-champ { flex: 1 1 auto; }
+.poste-nom-roue { flex: 0 0 88px; }
+.poste-compteur { margin-top: 4px; }
+
+/* Une ligne de compte local. */
+.poste-compte {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+}
+
+.poste-compte-champs {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.poste-compte-champs label {
+    flex: 1 1 0;
+    display: block;
+    margin: 0;
+    font-size: .78rem;
+}
+
+.poste-compte-champs input,
+.poste-compte-champs select { margin-top: 4px; }
+
+.poste-compte-champs .c-suppr {
+    flex: 0 0 auto;
+    padding: 9px 12px;
+    line-height: 1;
+}
+
+.poste-compte-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 12px;
+}
+
+.poste-compte-options .poste-case { margin: 6px 0 0; padding: 2px 4px; }
+.poste-compte-options .poste-case > span { font-size: .82rem; }
+
+@media (max-width: 700px) {
+    .poste-compte-champs { flex-wrap: wrap; }
+    .poste-compte-champs label { flex-basis: 100%; }
+}

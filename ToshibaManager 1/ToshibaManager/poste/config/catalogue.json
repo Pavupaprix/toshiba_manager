@@ -1,0 +1,149 @@
+{
+  "_commentaire": "Catalogue des applications proposees sur /poste. Lu par poste_routes.py pour construire la page et valider le formulaire, et embarque tel quel dans le ZIP pour que le script PowerShell installe exactement ce qui a ete coche. source=winget -> installe par winget avec wingetId. source=outil -> binaire hebergé sur le serveur (dossier OUTILS_DIR), telecharge par le poste puis lance selon 'type'.",
+  "categories": [
+    { "id": "bureautique", "nom": "Bureautique", "icone": "📄" },
+    { "id": "multimedia",  "nom": "Multimédia & web", "icone": "🌐" },
+    { "id": "distant",     "nom": "Accès à distance", "icone": "🖥️" },
+    { "id": "depannage",   "nom": "Analyse & dépannage", "icone": "🧪" }
+  ],
+  "applications": [
+    {
+      "id": "acrobat",
+      "nom": "Adobe Acrobat Reader",
+      "description": "Lecteur PDF d'Adobe.",
+      "categorie": "bureautique",
+      "source": "winget",
+      "wingetId": "Adobe.Acrobat.Reader.64-bit"
+    },
+    {
+      "id": "foxit",
+      "nom": "Foxit PDF Reader",
+      "description": "Lecteur PDF léger, alternative à Acrobat.",
+      "categorie": "bureautique",
+      "source": "winget",
+      "wingetId": "Foxit.FoxitReader"
+    },
+    {
+      "id": "libreoffice",
+      "nom": "LibreOffice",
+      "description": "Suite bureautique libre. Installe d'abord Visual C++ Redistributable.",
+      "categorie": "bureautique",
+      "source": "winget",
+      "wingetId": "TheDocumentFoundation.LibreOffice",
+      "skipDeps": true,
+      "prerequis": ["vcredist"]
+    },
+    {
+      "id": "office365",
+      "nom": "Microsoft 365",
+      "description": "Installé uniquement si aucune version d'Office n'est détectée sur le poste.",
+      "categorie": "bureautique",
+      "source": "winget",
+      "wingetId": "Microsoft.Office",
+      "siAbsent": "office"
+    },
+    {
+      "id": "sevenzip",
+      "nom": "7-Zip",
+      "description": "Gestionnaire d'archives.",
+      "categorie": "bureautique",
+      "source": "winget",
+      "wingetId": "7zip.7zip"
+    },
+    {
+      "id": "chrome",
+      "nom": "Google Chrome",
+      "description": "Navigateur web.",
+      "categorie": "multimedia",
+      "source": "winget",
+      "wingetId": "Google.Chrome",
+      "option": "navigateurParDefaut"
+    },
+    {
+      "id": "vlc",
+      "nom": "VLC media player",
+      "description": "Lecteur multimédia.",
+      "categorie": "multimedia",
+      "source": "winget",
+      "wingetId": "VideoLAN.VLC"
+    },
+    {
+      "id": "anydesk",
+      "nom": "AnyDesk",
+      "description": "Prise en main à distance. Configure l'accès sans surveillance.",
+      "categorie": "distant",
+      "source": "winget",
+      "wingetId": "AnyDesk.AnyDesk",
+      "option": "anydesk"
+    },
+    {
+      "id": "vncviewer",
+      "nom": "VNC Viewer",
+      "description": "Client RealVNC.",
+      "categorie": "distant",
+      "source": "outil",
+      "fichier": "VNC-Viewer-7.15.1-Windows-64bit.exe",
+      "type": "exe",
+      "arguments": "/S",
+      "sha256": "39195C0ABE53DC8FC2A57BEEB6DF9ACCF72226D46688845BF864C4D639030D84"
+    },
+    {
+      "id": "kudu",
+      "nom": "Kudu",
+      "description": "Nettoyeur système open-source.",
+      "categorie": "depannage",
+      "source": "outil",
+      "fichier": "Kudu-Setup-2.6.0.exe",
+      "type": "nsis",
+      "sha256": "572E588CD0CC59BA692472E50D0DB794153BF1F33F9E616ECC75FA2DA3C4D59D"
+    },
+    {
+      "id": "crystaldiskinfo",
+      "nom": "CrystalDiskInfo",
+      "description": "État de santé SMART des disques.",
+      "categorie": "depannage",
+      "source": "outil",
+      "fichier": "CrystalDiskInfo9_9_2.exe",
+      "type": "inno",
+      "sha256": "45BE8DEF3EC8876DCD1E5D299BD049140BC5D692413883AAE1049F7D24A41ABE"
+    },
+    {
+      "id": "geekuninstaller",
+      "nom": "Geek Uninstaller",
+      "description": "Désinstalleur portable. Extrait dans Program Files avec un raccourci bureau.",
+      "categorie": "depannage",
+      "source": "outil",
+      "fichier": "GeekUninstaller.zip",
+      "type": "zip",
+      "dossierCible": "Geek Uninstaller",
+      "executable": "geek.exe",
+      "sha256": "44ED57036B0F176242A9F7B9094E68A5013A686C479B6BA4C06A284CE97C5750"
+    },
+    {
+      "id": "treesize",
+      "nom": "TreeSize Free",
+      "description": "Analyse de l'occupation disque.",
+      "categorie": "depannage",
+      "source": "outil",
+      "fichier": "TreeSizeFreeSetup.exe",
+      "type": "inno",
+      "sha256": "D800F1765539194A088CD06B2B8A73C40C4A1001425F2A892F495A53DB9DA2DE"
+    },
+    {
+      "id": "transwiz",
+      "nom": "Transwiz",
+      "description": "Sauvegarde et transfert de profils Windows.",
+      "categorie": "depannage",
+      "source": "outil",
+      "fichier": "Transwiz.msi",
+      "type": "msi",
+      "sha256": "511C2C0908883BC9D05295E5145B767F2633461C93A31D1CB8D765EE09CDD801"
+    }
+  ],
+  "implicites": {
+    "vcredist": {
+      "nom": "Visual C++ 2015+ (x64)",
+      "wingetId": "Microsoft.VCRedist.2015+.x64"
+    }
+  }
+}

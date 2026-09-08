@@ -12,6 +12,7 @@ from email.mime.text import MIMEText
 
 import addressbook
 from installer_routes import installer_bp
+from poste_routes import poste_bp
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,6 +24,9 @@ XML_FILE = os.path.join(app.config['UPLOAD_FOLDER'], 'templates.xml')
 
 # Distribution du script d'installation des copieurs (voir installer_routes.py).
 app.register_blueprint(installer_bp)
+
+# Génération du script d'installation d'un poste Windows (voir poste_routes.py).
+app.register_blueprint(poste_bp)
 
 # Cloudflare met les .css et .js en cache plusieurs heures, quoi que renvoie
 # l'application : une feuille de style périmée a déjà été servie après un
