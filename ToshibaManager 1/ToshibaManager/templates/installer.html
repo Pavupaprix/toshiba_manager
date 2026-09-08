@@ -130,7 +130,19 @@
         </section>
 
         <section class="smtp-card smtp-message">
-            <div><strong>Pilotes présents sur le serveur</strong></div>
+            <div class="pilotes-entete">
+                <strong>Pilotes présents sur le serveur</strong>
+                <a class="lien-pilotes" href="https://www.toshibatec.eu/support/drivers/"
+                   target="_blank" rel="noopener noreferrer"
+                   title="Télécharger les pilotes sur toshibatec.eu">
+                    <svg class="lien-pilotes-icone" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 9V4h12v5" />
+                        <path d="M6 18H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-1" />
+                        <path d="M8 15h8v5H8z" />
+                    </svg>
+                    <span>toshibatec.eu</span>
+                </a>
+            </div>
             <ul>
                 {% for cle, p in pilotes.items() %}
                 <li>{{ p.libelle }} — {% if p.disponible %}disponible{% else %}archive absente{% endif %}</li>

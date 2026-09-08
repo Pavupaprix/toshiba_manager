@@ -1905,3 +1905,45 @@ table.ab-preview {
 
 /* .btn est prevu pour <button> : un <a> garde son soulignement par defaut. */
 a.btn { text-decoration: none; }
+
+/* --- Encadre « Pilotes presents sur le serveur » ------------------------ */
+
+.pilotes-entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.lien-pilotes {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: var(--transition);
+}
+
+.lien-pilotes:hover {
+    border-color: var(--indigo);
+    color: var(--indigo);
+}
+
+/* Trace du pictogramme : le contour suit la couleur du lien, y compris au survol. */
+.lien-pilotes-icone {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
