@@ -56,7 +56,7 @@ numérique et de Chrome par défaut dès sa première ouverture de session.
   Le script pose donc la stratégie `DefaultAssociationsConfiguration`, relue à
   chaque ouverture de session — le changement se voit à la reconnexion, pour
   tous les comptes. Le fichier d'associations vit dans
-  `%ProgramData%\OMBssociations-omb.xml` : le supprimer casserait le réglage.
+  `%ProgramData%\OMB\associations-omb.xml` : le supprimer casserait le réglage.
   Les éditions Famille de Windows peuvent ignorer cette stratégie ; les comptes
   créés par le script restent couverts par DISM dans tous les cas.
 - **SetUserFTA n'est pas fourni** : seul outil capable de basculer la session en
