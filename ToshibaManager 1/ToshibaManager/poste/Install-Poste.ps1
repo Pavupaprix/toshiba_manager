@@ -187,7 +187,7 @@ if ($reglages.Count -eq 0) {
 # ============================================================================
 if ($config.navigateurParDefaut -eq 'chrome') {
     Ecrire-Titre 'Navigateur par defaut'
-    Add-Resultat 'Chrome par defaut' (Set-ChromeParDefaut -Travail $Travail) 'config'
+    Add-Resultat 'Chrome par defaut' (Set-ChromeParDefaut) 'config'
 }
 
 

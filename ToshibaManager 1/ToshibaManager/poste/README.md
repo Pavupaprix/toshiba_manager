@@ -51,10 +51,17 @@ numérique et de Chrome par défaut dès sa première ouverture de session.
 - **`EnableLUA=0`** (UAC « désactiver complètement ») empêche les applications
   du Store de s'ouvrir et exige un redémarrage. C'est un effet de bord Windows,
   pas un bug du script.
-- **SetUserFTA n'est pas fourni** : son auteur exige une licence pour un usage
-  professionnel. Sans lui, Chrome devient le navigateur par défaut des comptes
-  créés par le script, mais pas de la session du technicien. Déposer
-  `SetUserFTA.exe` dans `lib/` suffit à activer ce second passage.
+- **Chrome par défaut ne s'applique jamais à la session déjà ouverte.** Windows
+  verrouille ce réglage par une empreinte que seule son interface sait calculer.
+  Le script pose donc la stratégie `DefaultAssociationsConfiguration`, relue à
+  chaque ouverture de session — le changement se voit à la reconnexion, pour
+  tous les comptes. Le fichier d'associations vit dans
+  `%ProgramData%\OMBssociations-omb.xml` : le supprimer casserait le réglage.
+  Les éditions Famille de Windows peuvent ignorer cette stratégie ; les comptes
+  créés par le script restent couverts par DISM dans tous les cas.
+- **SetUserFTA n'est pas fourni** : seul outil capable de basculer la session en
+  cours sans déconnexion, mais son auteur exige une licence pour un usage
+  professionnel. Déposer `SetUserFTA.exe` dans `lib/` suffit à l'activer.
 - **VNC Viewer** : le commutateur silencieux `/S` de l'installeur RealVNC n'a
   pas encore été validé sur une machine réelle. Le résumé signalera un code de
   retour non nul si c'est le mauvais.
