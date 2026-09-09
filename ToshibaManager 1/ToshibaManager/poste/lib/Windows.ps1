@@ -134,6 +134,10 @@ function Set-ReglagesWindows {
         $resultats['pubs'] = 'Applique'
     }
 
+    if ($Windows.supprimerRaccourcisEdge) {
+        $resultats['raccourcisEdge'] = Remove-RaccourcisEdge
+    }
+
     if ($Windows.desactiverDemarrageRapide) {
         Set-ValeurRegistre 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power' `
                            'HiberbootEnabled' 0
@@ -142,6 +146,93 @@ function Set-ReglagesWindows {
     }
 
     return $resultats
+}
+
+function Remove-RaccourcisEdge {
+    <#
+        Retire Edge du bureau et de la barre des taches.
+
+        Le bureau est simple : les raccourcis sont des fichiers. La strategie
+        EdgeUpdate evite en plus qu'Edge le recree a sa prochaine mise a jour,
+        sans quoi il reviendrait tout seul quelques jours plus tard.
+
+        La barre des taches ne se laisse pas faire aussi facilement : la liste
+        des epingles vit dans une valeur binaire du registre que rien ne permet
+        d'editer proprement. La methode qui fonctionne consiste a supprimer le
+        raccourci du dossier des epingles, puis a effacer cette valeur pour que
+        l'explorateur reconstruise sa liste a partir du dossier -- ce qui exige
+        de le relancer.
+    #>
+
+    $faits = @()
+
+    # --- Bureau -------------------------------------------------------------
+    $bureaux = New-Object System.Collections.Generic.List[string]
+    $bureaux.Add((Join-Path $env:PUBLIC 'Desktop'))
+    $bureaux.Add((Join-Path $env:SystemDrive 'Users\Default\Desktop'))
+    Get-ChildItem (Join-Path $env:SystemDrive 'Users') -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { $bureaux.Add((Join-Path $_.FullName 'Desktop')) }
+
+    $supprimes = 0
+    foreach ($dossier in ($bureaux | Select-Object -Unique)) {
+        foreach ($nom in 'Microsoft Edge.lnk', 'Edge.lnk') {
+            $chemin = Join-Path $dossier $nom
+            if (Test-Path $chemin) {
+                Remove-Item $chemin -Force -ErrorAction SilentlyContinue
+                if (-not (Test-Path $chemin)) { $supprimes++ }
+            }
+        }
+    }
+
+    if ($supprimes -gt 0) {
+        Ecrire ('  Raccourci Edge retire du bureau ({0} emplacement(s)).' -f $supprimes) 'Green'
+        $faits += 'bureau'
+    } else {
+        Ecrire '  Aucun raccourci Edge sur le bureau.' 'Green'
+    }
+
+    # Sans cette strategie, la prochaine mise a jour d'Edge repose le raccourci.
+    Set-ValeurRegistre 'HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate' 'CreateDesktopShortcutDefault' 0
+
+    # --- Barre des taches ---------------------------------------------------
+    $epingles = Join-Path $env:APPDATA 'Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar'
+    $trouve = $false
+    if (Test-Path $epingles) {
+        Get-ChildItem $epingles -Filter '*Edge*.lnk' -ErrorAction SilentlyContinue | ForEach-Object {
+            Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue
+            $trouve = $true
+        }
+    }
+
+    if (-not $trouve) {
+        Ecrire '  Edge n''est pas epingle a la barre des taches de cette session.' 'Green'
+        if ($faits.Count -eq 0) { return 'Rien a retirer' }
+        return 'Retire (' + ($faits -join ', ') + ')'
+    }
+
+    try {
+        $taskband = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband'
+        Remove-ItemProperty -Path $taskband -Name 'Favorites' -ErrorAction SilentlyContinue
+        Remove-ItemProperty -Path $taskband -Name 'FavoritesResolve' -ErrorAction SilentlyContinue
+
+        # L'explorateur relit sa liste au demarrage seulement : sans relance, le
+        # raccourci supprime reste affiche jusqu'a la prochaine session.
+        Ecrire '  Relance de l''explorateur...' 'Yellow'
+        Stop-Process -Name explorer -Force -ErrorAction Stop
+        Start-Sleep -Seconds 3
+        if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
+            Start-Process 'explorer.exe' -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2
+        }
+        Ecrire '  Edge retire de la barre des taches.' 'Green'
+        $faits += 'barre des taches'
+    } catch {
+        Ecrire ('  Barre des taches non modifiee : {0}' -f $_.Exception.Message) 'Yellow'
+        Ecrire '  Le raccourci partira a la prochaine ouverture de session.' 'Yellow'
+    }
+
+    if ($faits.Count -eq 0) { return 'Rien a retirer' }
+    return 'Retire (' + ($faits -join ', ') + ')'
 }
 
 function Remove-Logiciel {

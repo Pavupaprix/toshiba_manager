@@ -80,7 +80,7 @@ COMPTES_RESERVES = {
 UAC_VALEURS = ('inchange', 'sansConfirmation', 'desactive')
 
 REGLAGES_WINDOWS = ('extensionsVisibles', 'paveNumerique', 'supprimerPubs',
-                    'desactiverDemarrageRapide')
+                    'desactiverDemarrageRapide', 'supprimerRaccourcisEdge')
 
 # Le seul logiciel que le script a le droit de desinstaller.
 DESINSTALLATION_AUTORISEE = 'CCleaner'

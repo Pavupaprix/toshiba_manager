@@ -246,7 +246,8 @@
 
         var windows = {};
         ['extensionsVisibles', 'paveNumerique', 'supprimerPubs',
-         'desactiverDemarrageRapide', 'desinstallerCcleaner'].forEach(function (nom) {
+         'desactiverDemarrageRapide', 'supprimerRaccourcisEdge',
+         'desinstallerCcleaner'].forEach(function (nom) {
             windows[nom] = document.querySelector('input[name="' + nom + '"]').checked;
         });
 
