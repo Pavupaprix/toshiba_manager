@@ -72,13 +72,29 @@ function Invoke-Winget {
 
     $parametres = @($Action, '--id', $Id) + $Arguments
 
+    # Start-Process, et jamais « & winget » : appele directement dans une
+    # fonction dont on recupere la valeur, winget ecrit sur le pipeline de
+    # PowerShell et sa sortie se melange au code de retour. La fonction
+    # renvoyait alors un tableau, « -eq 0 » n'etait jamais vrai, et le texte de
+    # winget s'affichait a la place du code -- toute installation reussie
+    # passait pour un echec.
+    #
+    # -NoNewWindow fait heriter la console : winget garde sa barre de
+    # progression, ce qu'une redirection par pipe lui ferait abandonner.
+    $exe = (Get-Command winget -ErrorAction SilentlyContinue).Source
+    if (-not $exe) { $exe = 'winget.exe' }
+
+    $proc = Start-Process -FilePath $exe -ArgumentList $parametres `
+                          -NoNewWindow -PassThru -ErrorAction Stop
+    # Sans cette lecture, .NET ne conserve pas le handle du processus et
+    # ExitCode revient vide une fois qu'il s'est termine.
+    $null = $proc.Handle
+
     if (-not $Lent) {
-        & winget @parametres
-        return $LASTEXITCODE
+        $proc.WaitForExit()
+        return $proc.ExitCode
     }
 
-    $proc = Start-Process -FilePath 'winget.exe' -ArgumentList $parametres `
-                          -NoNewWindow -PassThru -ErrorAction Stop
     $debut = Get-Date
     while (-not $proc.HasExited) {
         Start-Sleep -Seconds 5
