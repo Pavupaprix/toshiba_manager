@@ -106,6 +106,8 @@ if ($viaWinget.Count -gt 0) {
             Add-Resultat $app.nom 'Echec (winget absent)' $app.wingetId
         }
     } else {
+        Ecrire "  winget affiche sa propre progression ci-dessous." 'DarkGray'
+        Ecrire "  Le premier paquet est le plus long : winget met a jour son index." 'DarkGray'
         $index = 0
         foreach ($app in $viaWinget) {
             $index++

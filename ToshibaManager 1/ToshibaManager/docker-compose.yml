@@ -14,6 +14,9 @@ services:
       - "${PORT:-5000}:5000"
     environment:
       - PORT=5000
+      # Sans fuseau, le conteneur horodate en UTC : la date inscrite dans
+      # config.json ne correspondrait pas a celle du journal sur le poste.
+      - TZ=${TZ:-Europe/Paris}
       - DRIVERS_DIR=/app/drivers
       - OUTILS_DIR=/app/outils
       # URL publique du service, utilisee dans le .bat genere. Sans elle, on

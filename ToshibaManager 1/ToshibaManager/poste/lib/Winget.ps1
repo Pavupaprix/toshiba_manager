@@ -65,7 +65,10 @@ function Install-AppWinget {
 
     if ($presente) {
         Ecrire "  Deja presente : recherche d'une mise a jour..."
-        winget upgrade --id $Id @wgArgs | Out-Null
+        # Sortie laissee visible : winget affiche sa progression, et surtout ses
+        # eventuelles invites. Masquee, une question sans reponse possible fait
+        # passer le script pour bloque.
+        winget upgrade --id $Id @wgArgs
         $code = $LASTEXITCODE
 
         if ($code -eq 0) {
@@ -81,7 +84,7 @@ function Install-AppWinget {
     }
 
     Ecrire '  Absente : installation en cours...'
-    winget install --id $Id @wgArgs | Out-Null
+    winget install --id $Id @wgArgs
     $code = $LASTEXITCODE
 
     if ($code -eq 0) {
