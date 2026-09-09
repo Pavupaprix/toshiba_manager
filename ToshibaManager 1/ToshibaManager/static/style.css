@@ -2107,3 +2107,76 @@ a.btn { text-decoration: none; }
     .poste-compte-champs { flex-wrap: wrap; }
     .poste-compte-champs label { flex-basis: 100%; }
 }
+
+
+/* --- Hub : regroupement des actions par domaine ------------------------- */
+
+.hub-groupes {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    width: 100%;
+    max-width: 620px;
+}
+
+.hub-groupe { width: 100%; }
+
+/* Le trait qui prolonge le titre separe les groupes sans ajouter de bloc. */
+.hub-groupe-titre {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 0 18px 4px;
+    color: var(--muted-strong);
+    font-size: .82rem;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    animation: rise .4s ease both;
+}
+
+.hub-groupe-titre::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+/* Le second groupe entre apres le premier, dans la continuite du decalage
+   deja applique aux cartes qui le precedent. */
+.hub-groupe:nth-child(2) .hub-groupe-titre { animation-delay: .24s; }
+.hub-groupe:nth-child(2) .hub-choice { animation-delay: .32s; }
+
+@media (max-width: 640px) {
+    .hub-groupes { gap: 30px; }
+}
+
+
+/* Bascule « tout cocher / tout decocher » d'une categorie. Pousse a droite de
+   l'en-tete de carte, qui est deja un conteneur flex. */
+.poste-tout {
+    margin-left: auto;
+    flex: 0 0 auto;
+    align-self: flex-start;
+    padding: 6px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--muted-strong);
+    font-family: inherit;
+    font-size: .74rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.poste-tout:hover:not(:disabled) {
+    border-color: var(--indigo);
+    color: var(--indigo);
+}
+
+.poste-tout:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}

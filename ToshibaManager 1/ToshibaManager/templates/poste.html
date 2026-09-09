@@ -105,6 +105,7 @@
                     <div class="smtp-card-heading">
                         <span class="smtp-card-icon" aria-hidden="true">{{ categorie.icone }}</span>
                         <div><p class="smtp-eyebrow">CATÉGORIE</p><h2>{{ categorie.nom }}</h2></div>
+                        <button type="button" class="poste-tout" data-tout>Tout cocher</button>
                     </div>
 
                     {% for app in applications if app.categorie == categorie.id %}

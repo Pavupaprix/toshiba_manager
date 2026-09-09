@@ -115,7 +115,44 @@
     });
 
     Array.prototype.forEach.call(document.querySelectorAll('input[name="app"]'), function (c) {
-        c.addEventListener('change', function () { majAnyDesk(); majChrome(); majPdf(); });
+        c.addEventListener('change', function () {
+            majAnyDesk(); majChrome(); majPdf(); majBoutonsTout();
+        });
+    });
+
+    // -------------------------
+    // Tout cocher / tout decocher, par categorie
+    // -------------------------
+    // Un seul bouton qui bascule, plutot que deux : son libelle dit toujours ce
+    // qu'un clic va faire. Les entrees grisees (installeur absent du serveur)
+    // sont ignorees -- les cocher ne produirait qu'un refus a la generation.
+    function casesDe(bouton) {
+        return Array.prototype.slice.call(
+            bouton.closest('section').querySelectorAll('input[name="app"]:not([disabled])'));
+    }
+
+    function majBoutonsTout() {
+        Array.prototype.forEach.call(document.querySelectorAll('[data-tout]'), function (b) {
+            var cases = casesDe(b);
+            var toutes = cases.length > 0 && cases.every(function (c) { return c.checked; });
+            b.textContent = toutes ? 'Tout décocher' : 'Tout cocher';
+            b.disabled = cases.length === 0;
+        });
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-tout]'), function (b) {
+        b.addEventListener('click', function () {
+            var cases = casesDe(b);
+            var cocher = !cases.every(function (c) { return c.checked; });
+            cases.forEach(function (c) {
+                if (c.checked === cocher) return;
+                c.checked = cocher;
+                // Une affectation n'emet pas 'change' : sans ce declenchement,
+                // le champ AnyDesk et l'option Chrome ne suivraient pas.
+                c.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            majBoutonsTout();
+        });
     });
 
     champCode.addEventListener('input', function () {
@@ -265,6 +302,7 @@
         majAnyDesk();
         majChrome();
         majPdf();
+        majBoutonsTout();
     }
 
     document.getElementById('exporterReglages').addEventListener('click', function () {
@@ -348,4 +386,5 @@
     majAnyDesk();
     majChrome();
     majPdf();
+    majBoutonsTout();
 })();

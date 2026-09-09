@@ -24,33 +24,45 @@
         <div class="hub-hero">
             <span class="hub-kicker">Centre de contrôle</span>
             <h1 class="hub-title">Que souhaitez-vous <span class="accent">faire</span> ?</h1>
-            <p class="hub-subtitle">Choisissez une action pour configurer votre copieur Toshiba.</p>
+            <p class="hub-subtitle">Choisissez l'intervention à préparer.</p>
         </div>
 
-        <div class="hub-choices">
-            <a class="hub-choice hub-choice--printer" href="{{ url_for('installer.page') }}">
-                <span class="hub-choice-icon" aria-hidden="true">🖨️</span>
-                <span class="hub-choice-label">Installer un copieur</span>
-                <span class="hub-choice-arrow" aria-hidden="true">→</span>
-            </a>
+        <div class="hub-groupes">
+            <section class="hub-groupe">
+                <h2 class="hub-groupe-titre">Toshiba Manager</h2>
 
-            <a class="hub-choice hub-choice--pc" href="{{ url_for('poste.page') }}">
-                <span class="hub-choice-icon" aria-hidden="true">💻</span>
-                <span class="hub-choice-label">Installer un poste</span>
-                <span class="hub-choice-arrow" aria-hidden="true">→</span>
-            </a>
+                <div class="hub-choices">
+                    <a class="hub-choice hub-choice--printer" href="{{ url_for('installer.page') }}">
+                        <span class="hub-choice-icon" aria-hidden="true">🖨️</span>
+                        <span class="hub-choice-label">Installer un copieur</span>
+                        <span class="hub-choice-arrow" aria-hidden="true">→</span>
+                    </a>
 
-            <a class="hub-choice hub-choice--gear" href="{{ url_for('parametrage') }}">
-                <span class="hub-choice-icon" aria-hidden="true">⚙️</span>
-                <span class="hub-choice-label">Paramétrage Copieur TopAccess</span>
-                <span class="hub-choice-arrow" aria-hidden="true">→</span>
-            </a>
+                    <a class="hub-choice hub-choice--gear" href="{{ url_for('parametrage') }}">
+                        <span class="hub-choice-icon" aria-hidden="true">⚙️</span>
+                        <span class="hub-choice-label">Paramétrage Copieur TopAccess</span>
+                        <span class="hub-choice-arrow" aria-hidden="true">→</span>
+                    </a>
 
-            <a class="hub-choice hub-choice--mail" href="{{ url_for('smtp_test') }}">
-                <span class="hub-choice-icon" aria-hidden="true">✉️</span>
-                <span class="hub-choice-label">Test SMTP</span>
-                <span class="hub-choice-arrow" aria-hidden="true">→</span>
-            </a>
+                    <a class="hub-choice hub-choice--mail" href="{{ url_for('smtp_test') }}">
+                        <span class="hub-choice-icon" aria-hidden="true">✉️</span>
+                        <span class="hub-choice-label">Test SMTP</span>
+                        <span class="hub-choice-arrow" aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </section>
+
+            <section class="hub-groupe">
+                <h2 class="hub-groupe-titre">Poste Windows</h2>
+
+                <div class="hub-choices">
+                    <a class="hub-choice hub-choice--pc" href="{{ url_for('poste.page') }}">
+                        <span class="hub-choice-icon" aria-hidden="true">💻</span>
+                        <span class="hub-choice-label">Installer un poste Windows</span>
+                        <span class="hub-choice-arrow" aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </section>
         </div>
     </div>
 
