@@ -11,12 +11,15 @@
 # Code winget : "aucune mise a jour applicable".
 $script:NO_APPLICABLE_UPGRADE = -1978335189
 
+# --disable-interactivity est volontairement absent : il supprime aussi la barre
+# de progression de winget, et le script paraissait alors fige pendant chaque
+# telechargement. Les deux --accept-* couvrent les seules invites que winget
+# poserait ici, et --exact --id ecarte le choix entre plusieurs paquets.
 $script:WingetArgs = @(
     '--exact',
     '--silent',
     '--accept-package-agreements',
-    '--accept-source-agreements',
-    '--disable-interactivity'
+    '--accept-source-agreements'
 )
 
 function Test-Winget {
@@ -50,11 +53,50 @@ function Test-OfficePresent {
     return [bool]$trouve
 }
 
+function Invoke-Winget {
+    <#
+        Lance winget et renvoie son code de sortie.
+
+        Pour un paquet marque lent -- Microsoft 365 telecharge plusieurs Go
+        depuis les serveurs Microsoft et, installe en silencieux, n'affiche
+        rien pendant ce temps -- winget est lance comme processus distinct pour
+        qu'un compteur de temps ecoule puisse tourner a cote. Sans ce repere,
+        rien ne distingue une installation en cours d'un blocage.
+    #>
+    param(
+        [string]$Action,
+        [string]$Id,
+        [string[]]$Arguments,
+        [switch]$Lent
+    )
+
+    $parametres = @($Action, '--id', $Id) + $Arguments
+
+    if (-not $Lent) {
+        & winget @parametres
+        return $LASTEXITCODE
+    }
+
+    $proc = Start-Process -FilePath 'winget.exe' -ArgumentList $parametres `
+                          -NoNewWindow -PassThru -ErrorAction Stop
+    $debut = Get-Date
+    while (-not $proc.HasExited) {
+        Start-Sleep -Seconds 5
+        $ecoule = (Get-Date) - $debut
+        Write-Host ("`r    en cours depuis {0:mm\:ss} - ne fermez pas cette fenetre    " -f $ecoule) `
+                   -NoNewline -ForegroundColor DarkGray
+    }
+    Write-Host "`r                                                                    " -NoNewline
+    Write-Host ''
+    return $proc.ExitCode
+}
+
 function Install-AppWinget {
     param(
         [string]$Nom,
         [string]$Id,
-        [switch]$SkipDeps
+        [switch]$SkipDeps,
+        [switch]$Lent
     )
 
     $wgArgs = $script:WingetArgs
@@ -65,11 +107,7 @@ function Install-AppWinget {
 
     if ($presente) {
         Ecrire "  Deja presente : recherche d'une mise a jour..."
-        # Sortie laissee visible : winget affiche sa progression, et surtout ses
-        # eventuelles invites. Masquee, une question sans reponse possible fait
-        # passer le script pour bloque.
-        winget upgrade --id $Id @wgArgs
-        $code = $LASTEXITCODE
+        $code = Invoke-Winget -Action 'upgrade' -Id $Id -Arguments $wgArgs -Lent:$Lent
 
         if ($code -eq 0) {
             Ecrire '  Mis a jour.' 'Green'
@@ -84,8 +122,7 @@ function Install-AppWinget {
     }
 
     Ecrire '  Absente : installation en cours...'
-    winget install --id $Id @wgArgs
-    $code = $LASTEXITCODE
+    $code = Invoke-Winget -Action 'install' -Id $Id -Arguments $wgArgs -Lent:$Lent
 
     if ($code -eq 0) {
         Ecrire '  Installe.' 'Green'

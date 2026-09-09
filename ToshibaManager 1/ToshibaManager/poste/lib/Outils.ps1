@@ -23,9 +23,24 @@ function Get-Outil {
     $url = '{0}/poste/outils/{1}' -f $BaseUrl.TrimEnd('/'), [uri]::EscapeDataString($Fichier)
     $cible = Join-Path $Destination $Fichier
 
-    Ecrire '  Telechargement...'
+    Ecrire ('  Telechargement de {0}...' -f $Fichier)
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri $url -OutFile $cible -UseBasicParsing -TimeoutSec 600 -ErrorAction Stop
+
+    # La barre de progression d'Invoke-WebRequest divise le debit par dix sous
+    # PowerShell 5.1 : sur les 113 Mo de Kudu, la difference se compte en
+    # minutes. On l'eteint et on affiche la duree reelle a la place.
+    $progressionAvant = $ProgressPreference
+    $ProgressPreference = 'SilentlyContinue'
+    $depart = Get-Date
+    try {
+        Invoke-WebRequest -Uri $url -OutFile $cible -UseBasicParsing -TimeoutSec 900 -ErrorAction Stop
+    } finally {
+        $ProgressPreference = $progressionAvant
+    }
+
+    $taille = (Get-Item $cible).Length / 1MB
+    $duree = (Get-Date) - $depart
+    Ecrire ('  {0:N0} Mo recus en {1:mm\:ss}.' -f $taille, $duree)
 
     if ($Sha256) {
         $empreinte = (Get-FileHash -Path $cible -Algorithm SHA256).Hash

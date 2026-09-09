@@ -98,6 +98,14 @@ if ($config.windows.desinstaller -and $config.windows.desinstaller.Count -gt 0) 
 $viaWinget = @($config.applications | Where-Object { $_.source -eq 'winget' })
 $viaOutil  = @($config.applications | Where-Object { $_.source -eq 'outil' })
 
+# Les paquets longs passent en dernier. Microsoft 365 immobilise le script une
+# demi-heure : place au milieu, il donne l'impression que tout est bloque alors
+# que les paquets suivants auraient pris quelques secondes. Deux filtres plutot
+# qu'un Sort-Object : en PowerShell 5.1 le tri n'est pas stable et melangerait
+# l'ordre du catalogue, dont dependent les prerequis comme VCRedist.
+$viaWinget = @($viaWinget | Where-Object { -not $_.lent }) +
+             @($viaWinget | Where-Object { $_.lent })
+
 if ($viaWinget.Count -gt 0) {
     Ecrire-Titre 'Applications (winget)'
 
@@ -122,7 +130,15 @@ if ($viaWinget.Count -gt 0) {
                 continue
             }
 
-            $statut = Install-AppWinget -Nom $app.nom -Id $app.wingetId -SkipDeps:([bool]$app.skipDeps)
+            if ($app.avertissement) { Ecrire ('  ' + $app.avertissement) 'Yellow' }
+
+            $depart = Get-Date
+            $statut = Install-AppWinget -Nom $app.nom -Id $app.wingetId `
+                                        -SkipDeps:([bool]$app.skipDeps) -Lent:([bool]$app.lent)
+            $duree = (Get-Date) - $depart
+            if ($duree.TotalSeconds -ge 20) {
+                Ecrire ('  Duree : {0:mm\:ss}' -f $duree) 'DarkGray'
+            }
             Add-Resultat $app.nom $statut $app.wingetId
         }
     }

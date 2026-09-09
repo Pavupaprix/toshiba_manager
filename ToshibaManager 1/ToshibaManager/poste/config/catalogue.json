@@ -36,11 +36,13 @@
     {
       "id": "office365",
       "nom": "Microsoft 365",
-      "description": "Installé uniquement si aucune version d'Office n'est détectée sur le poste.",
+      "description": "Installé uniquement si aucune version d'Office n'est détectée sur le poste. Compter 15 à 30 minutes.",
       "categorie": "bureautique",
       "source": "winget",
       "wingetId": "Microsoft.Office",
-      "siAbsent": "office"
+      "siAbsent": "office",
+      "lent": true,
+      "avertissement": "Office telecharge plusieurs Go depuis les serveurs Microsoft et n'affiche rien pendant ce temps. Comptez 15 a 30 minutes selon la connexion."
     },
     {
       "id": "sevenzip",
