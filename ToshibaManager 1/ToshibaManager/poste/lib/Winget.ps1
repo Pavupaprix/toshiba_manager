@@ -72,10 +72,10 @@ function Invoke-Winget {
 
     $parametres = @($Action, '--id', $Id) + $Arguments
 
-    # Start-Process, et jamais « & winget » : appele directement dans une
+    # Start-Process, et jamais "& winget" : appele directement dans une
     # fonction dont on recupere la valeur, winget ecrit sur le pipeline de
     # PowerShell et sa sortie se melange au code de retour. La fonction
-    # renvoyait alors un tableau, « -eq 0 » n'etait jamais vrai, et le texte de
+    # renvoyait alors un tableau, "-eq 0" n'etait jamais vrai, et le texte de
     # winget s'affichait a la place du code -- toute installation reussie
     # passait pour un echec.
     #

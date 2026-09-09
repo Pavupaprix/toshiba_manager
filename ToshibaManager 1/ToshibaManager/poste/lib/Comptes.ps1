@@ -46,8 +46,13 @@ function Set-CompteLocal {
             if ($avecMotDePasse) {
                 Set-LocalUser -Name $nom -Password $securise -ErrorAction Stop
             } else {
-                # -Password $null retire le mot de passe d'un compte existant.
-                Set-LocalUser -Name $nom -Password $null -ErrorAction Stop
+                # Set-LocalUser refuse un mot de passe nul : son parametre
+                # -Password n'accepte pas $null. "net user <nom> """ est la
+                # seule facon de retirer le mot de passe d'un compte existant.
+                $sortie = & net.exe user $nom '""' 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    throw ("Retrait du mot de passe refuse : {0}" -f ($sortie -join ' '))
+                }
             }
             Set-LocalUser -Name $nom -PasswordNeverExpires $Compte.motDePasseNExpireJamais -ErrorAction SilentlyContinue
             Enable-LocalUser -Name $nom -ErrorAction SilentlyContinue
