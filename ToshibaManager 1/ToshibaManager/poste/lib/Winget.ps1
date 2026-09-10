@@ -15,8 +15,15 @@ $script:NO_APPLICABLE_UPGRADE = -1978335189
 # de progression de winget, et le script paraissait alors fige pendant chaque
 # telechargement. Les deux --accept-* couvrent les seules invites que winget
 # poserait ici, et --exact --id ecarte le choix entre plusieurs paquets.
+#
+# --source winget epingle la source communautaire, d'ou viennent toutes nos
+# applications. Sans lui, winget interroge aussi msstore : derriere un pare-feu
+# qui inspecte le TLS, cette source echoue (certificat resigne, winget epingle
+# celui de Microsoft), winget ne sait plus arbitrer entre ses sources et
+# renonce en demandant --source. Cela s'est produit sur un reseau d'entreprise.
 $script:WingetArgs = @(
     '--exact',
+    '--source', 'winget',
     '--silent',
     '--accept-package-agreements',
     '--accept-source-agreements'
@@ -118,7 +125,7 @@ function Install-AppWinget {
     $wgArgs = $script:WingetArgs
     if ($SkipDeps) { $wgArgs = $script:WingetArgs + '--skip-dependencies' }
 
-    winget list --id $Id --exact --accept-source-agreements | Out-Null
+    winget list --id $Id --exact --source winget --accept-source-agreements | Out-Null
     $presente = ($LASTEXITCODE -eq 0)
 
     if ($presente) {

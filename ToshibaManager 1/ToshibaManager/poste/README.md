@@ -62,6 +62,12 @@ numérique et de Chrome par défaut dès sa première ouverture de session.
 - **SetUserFTA n'est pas fourni** : seul outil capable de basculer la session en
   cours sans déconnexion, mais son auteur exige une licence pour un usage
   professionnel. Déposer `SetUserFTA.exe` dans `lib/` suffit à l'activer.
+- **Réseau qui inspecte le TLS** (proxy d'entreprise ou d'école qui resigne les
+  certificats) : winget refuse la source `msstore`, qui épingle les certificats
+  de Microsoft, avec `0x8a15005e : The server certificate did not match`. Le
+  script épingle donc `--source winget`, dont toutes nos applications
+  proviennent, ce qui évite la question. Si des téléchargements d'installeurs
+  échouent malgré tout sur un tel réseau, c'est la même cause.
 - **VNC Viewer** : le commutateur silencieux `/S` de l'installeur RealVNC n'a
   pas encore été validé sur une machine réelle. Le résumé signalera un code de
   retour non nul si c'est le mauvais.
