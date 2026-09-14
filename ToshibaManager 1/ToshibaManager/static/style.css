@@ -53,6 +53,12 @@
    THÈME SOMBRE
    ============================================================ */
 
+/* L attribut hidden doit primer sur toute regle d affichage. Sans cela,
+   .btn { display: inline-flex } le neutralise et un bouton cense etre
+   masque reste cliquable -- arrive au bouton de creation d entite GLPI,
+   qui ecrit dans le parc de production. */
+[hidden] { display: none !important; }
+
 [data-theme="dark"] {
     --ink: #e9f4f6;
     --ink-soft: #c2d6db;

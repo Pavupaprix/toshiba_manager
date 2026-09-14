@@ -158,6 +158,7 @@
     champCode.addEventListener('input', function () {
         majAnyDesk();
         majMotsDePasseDerives();
+        synchroniserGlpi();
     });
 
     // -------------------------
@@ -266,14 +267,24 @@
         glpiEtat.className = 'poste-glpi-etat' + (type ? ' poste-glpi-etat--' + type : '');
     }
 
+    var glpiNomModifie = false;
+    var glpiCodeModifie = false;
+
+    // La section 1 alimente la section 4 en continu, tant que le technicien n'a
+    // pas saisi autre chose ici : preparer un client de bout en bout ne doit pas
+    // obliger a retaper ce qui est deja en haut de page. Des qu'un de ces deux
+    // champs est touche a la main, il cesse de suivre -- meme principe que le
+    // nom du poste et le mot de passe AnyDesk.
+    function synchroniserGlpi() {
+        if (!caseGlpi) return;
+        if (!glpiNomModifie) glpiNomClient.value = champClient.value.trim();
+        if (!glpiCodeModifie) glpiCode.value = champCode.value.trim();
+    }
+
     function majGlpi() {
         if (!caseGlpi) return;
         blocGlpi.hidden = !caseGlpi.checked;
-        // Reprend ce qui est deja saisi en section 1 plutot que de le redemander.
-        if (caseGlpi.checked) {
-            if (!glpiNomClient.value) glpiNomClient.value = champClient.value.trim();
-            if (!glpiCode.value) glpiCode.value = champCode.value.trim();
-        }
+        if (caseGlpi.checked) synchroniserGlpi();
     }
 
     function tagPropose() {
@@ -282,6 +293,10 @@
 
     if (caseGlpi) {
         caseGlpi.addEventListener('change', majGlpi);
+
+        glpiNomClient.addEventListener('input', function () { glpiNomModifie = true; });
+        glpiCode.addEventListener('input', function () { glpiCodeModifie = true; });
+        champClient.addEventListener('input', synchroniserGlpi);
 
         glpiSousEntite.addEventListener('change', function () {
             blocGlpiNouvelle.hidden = glpiSousEntite.value !== '__nouvelle__';
