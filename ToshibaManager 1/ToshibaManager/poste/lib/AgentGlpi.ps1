@@ -133,6 +133,16 @@ function Set-ConfigurationAgentGlpi {
 
     if ($proc.ExitCode -eq 0) {
         Ecrire '  Inventaire envoye.' 'Green'
+        Ecrire ''
+        # Les regles d'affectation d'entite de GLPI ne jouent qu'a la creation
+        # d'une fiche. Un poste deja inventorie -- typiquement prepare a
+        # l'atelier sous prepatelier -- garde son entite d'origine malgre le
+        # nouveau TAG. Le technicien doit le savoir, avec le nom sous les yeux.
+        Ecrire '  A VERIFIER DANS GLPI' 'Yellow'
+        Ecrire ('  Si ce poste etait deja inventorie (prepare a l''atelier), sa fiche') 'Yellow'
+        Ecrire ('  reste dans son entite d''origine : GLPI ne la deplace pas.') 'Yellow'
+        Ecrire ('  Nom du poste : {0}' -f $env:COMPUTERNAME) 'Yellow'
+        Ecrire ''
     } else {
         Ecrire ('  Inventaire termine en erreur (code {0}) : il repartira a la prochaine echeance.' -f $proc.ExitCode) 'Yellow'
     }
