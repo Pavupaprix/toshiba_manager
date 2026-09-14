@@ -45,7 +45,7 @@ function Get-Outil {
     if ($Sha256) {
         $empreinte = (Get-FileHash -Path $cible -Algorithm SHA256).Hash
         if ($empreinte -ne $Sha256.ToUpper()) {
-            Remove-Item $cible -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $cible -Force -ErrorAction SilentlyContinue
             throw "Empreinte SHA-256 incorrecte pour $Fichier (attendu $Sha256, obtenu $empreinte)."
         }
     }
@@ -69,6 +69,7 @@ function Install-Outil {
     }
 
     Ecrire '  Installation en cours...'
+    $journalMsi = $null
 
     try {
         switch ($App.type) {
@@ -85,7 +86,13 @@ function Install-Outil {
                 $code = $proc.ExitCode
             }
             'msi' {
-                $arguments = @('/i', "`"$installeur`"", '/quiet', '/norestart')
+                # Journal detaille systematique : msiexec ne renvoie que des
+                # codes opaques -- 1603 signifie "erreur fatale" et rien de
+                # plus. Sans ce journal la cause reelle est perdue, et elle ne
+                # se reproduit pas forcement sur un autre poste.
+                $journalMsi = Join-Path $Travail ('msi-' + $App.id + '.log')
+                $arguments = @('/i', "`"$installeur`"", '/quiet', '/norestart',
+                               '/l*v', "`"$journalMsi`"")
 
                 # Proprietes MSI passees en ligne de commande : c'est la
                 # methode documentee par Teclib pour l'agent GLPI, et elle
@@ -114,7 +121,7 @@ function Install-Outil {
                 # Outil portable : on l'extrait sous Program Files et on pose un
                 # raccourci, sinon il resterait introuvable pour l'utilisateur.
                 $cible = Join-Path $env:ProgramFiles ('OMB\' + $App.dossierCible)
-                if (Test-Path $cible) { Remove-Item $cible -Recurse -Force -ErrorAction SilentlyContinue }
+                if (Test-Path -LiteralPath $cible) { Remove-Item -LiteralPath $cible -Recurse -Force -ErrorAction SilentlyContinue }
                 New-Item -ItemType Directory -Path $cible -Force | Out-Null
                 Expand-Archive -LiteralPath $installeur -DestinationPath $cible -Force -ErrorAction Stop
 
@@ -154,5 +161,42 @@ function Install-Outil {
     }
 
     Ecrire ("  Echec de l'installation (code {0})." -f $code) 'Red'
+    if ($journalMsi) { Show-EchecMsi -Journal $journalMsi -Id $App.id }
     return "Echec ($code)"
+}
+
+function Show-EchecMsi {
+    <#
+        Extrait du journal msiexec ce qui explique l'echec, et le conserve a
+        cote du journal d'installation.
+
+        Un journal MSI fait des milliers de lignes ; deux motifs suffisent
+        presque toujours : la ligne "Return value 3" marque l'action qui a
+        echoue, et les lignes "Error" en donnent la raison.
+    #>
+    param(
+        [string]$Journal,
+        [string]$Id
+    )
+
+    if (-not (Test-Path -LiteralPath $Journal)) {
+        Ecrire '  Aucun journal msiexec produit.' 'Yellow'
+        return
+    }
+
+    # Conserve avant tout : le dossier de travail est efface en fin de script.
+    $dossier = Join-Path $env:ProgramData 'OMB\InstallationPoste'
+    $garde = Join-Path $dossier ('msi-{0}-{1}.log' -f $Id, (Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'))
+    Copy-Item -LiteralPath $Journal -Destination $garde -Force -ErrorAction SilentlyContinue
+
+    $lignes = @(Select-String -LiteralPath $Journal -Pattern 'Return value 3', '^MSI \(s\).*: Error', 'Product: .* -- Error' -ErrorAction SilentlyContinue |
+                Select-Object -Last 6 -ExpandProperty Line)
+
+    if ($lignes.Count -gt 0) {
+        Ecrire '  Extrait du journal msiexec :' 'Yellow'
+        foreach ($ligne in $lignes) {
+            Ecrire ('    ' + $ligne.Trim()) 'DarkGray'
+        }
+    }
+    Ecrire ('  Journal complet conserve : {0}' -f $garde) 'Yellow'
 }

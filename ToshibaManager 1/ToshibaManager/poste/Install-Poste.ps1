@@ -233,7 +233,7 @@ if ($config.poste.renommer -and $config.poste.nom) {
 # ============================================================================
 # Resume
 # ============================================================================
-Remove-Item $Travail -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $Travail -Recurse -Force -ErrorAction SilentlyContinue
 
 $resultats = Get-Resultats
 
