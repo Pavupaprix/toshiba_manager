@@ -30,6 +30,9 @@
 $script:GLPI_CLE = 'HKLM:\SOFTWARE\GLPI-Agent'
 $script:GLPI_SERVICE = 'glpi-agent'
 
+# Au-dela, on cesse d'attendre l'inventaire : il se poursuit de son cote.
+$script:GLPI_DELAI_INVENTAIRE = 5
+
 function Get-EtatAgentGlpi {
     <#
         Renvoie 'absent', 'sain' ou 'casse', et le ProductCode si le produit est
@@ -91,16 +94,47 @@ function Set-ConfigurationAgentGlpi {
     }
 
     # Un inventaire immediat evite d'attendre la prochaine echeance pour que le
-    # poste remonte sous sa nouvelle entite.
+    # poste remonte sous sa nouvelle entite. Il dure plusieurs minutes --
+    # materiel, logiciels, WMI -- et n'affiche rien : sans compteur, le script
+    # passe pour bloque.
     $exe = Join-Path $env:ProgramFiles 'GLPI-Agent\glpi-agent.bat'
-    if (Test-Path -LiteralPath $exe) {
-        try {
-            Start-Process -FilePath $exe -ArgumentList '--force' `
-                          -Wait -NoNewWindow -ErrorAction Stop
-            Ecrire '  Inventaire envoye.' 'Green'
-        } catch {
-            Ecrire '  Inventaire immediat impossible : il partira a la prochaine echeance.' 'Yellow'
-        }
+    if (-not (Test-Path -LiteralPath $exe)) {
+        Ecrire '  Inventaire non declenche : le poste remontera a la prochaine echeance.' 'Yellow'
+        return
+    }
+
+    Ecrire '  Inventaire en cours, plusieurs minutes possibles...'
+    try {
+        $proc = Start-Process -FilePath $exe -ArgumentList '--force' `
+                              -PassThru -NoNewWindow -ErrorAction Stop
+        $null = $proc.Handle
+    } catch {
+        Ecrire '  Inventaire impossible a lancer : il partira a la prochaine echeance.' 'Yellow'
+        return
+    }
+
+    $debut = Get-Date
+    while (-not $proc.HasExited) {
+        Start-Sleep -Seconds 5
+        $ecoule = (Get-Date) - $debut
+        if ($ecoule.TotalMinutes -ge $script:GLPI_DELAI_INVENTAIRE) { break }
+        Write-Host ("`r    inventaire en cours depuis {0:mm\:ss}    " -f $ecoule) `
+                   -NoNewline -ForegroundColor DarkGray
+    }
+    Write-Host "`r                                                    " -NoNewline
+    Write-Host ''
+
+    if (-not $proc.HasExited) {
+        # On n'attend pas indefiniment : l'inventaire continue de son cote et
+        # le poste remontera quand il aura fini.
+        Ecrire ('  Inventaire encore en cours apres {0} minutes : il se poursuit en arriere-plan.' -f $script:GLPI_DELAI_INVENTAIRE) 'Yellow'
+        return
+    }
+
+    if ($proc.ExitCode -eq 0) {
+        Ecrire '  Inventaire envoye.' 'Green'
+    } else {
+        Ecrire ('  Inventaire termine en erreur (code {0}) : il repartira a la prochaine echeance.' -f $proc.ExitCode) 'Yellow'
     }
 }
 
