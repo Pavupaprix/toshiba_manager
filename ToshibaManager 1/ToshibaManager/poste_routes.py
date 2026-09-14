@@ -28,8 +28,10 @@ import unicodedata
 import zipfile
 from datetime import datetime
 
-from flask import (Blueprint, abort, current_app, render_template, request,
-                   send_from_directory)
+from flask import (Blueprint, abort, current_app, jsonify, render_template,
+                   request, send_from_directory)
+
+import glpi
 
 poste_bp = Blueprint('poste', __name__, url_prefix='/poste')
 
@@ -85,6 +87,13 @@ REGLAGES_WINDOWS = ('extensionsVisibles', 'paveNumerique', 'supprimerPubs',
 # Le seul logiciel que le script a le droit de desinstaller.
 DESINSTALLATION_AUTORISEE = 'CCleaner'
 
+# Identifiant de l'agent GLPI dans le catalogue.
+APP_GLPI = 'glpiagent'
+
+# Le TAG part sur la ligne de commande de msiexec, entre guillemets : un
+# guillemet a l'interieur casserait la citation et tronquerait la valeur.
+RE_TAG = re.compile(r'^[^"\x00-\x1f]{1,60}$')
+
 
 class ErreurFormulaire(ValueError):
     """Saisie invalide : le message est affichable tel quel au technicien."""
@@ -98,6 +107,15 @@ def _catalogue():
     chemin = os.path.join(POSTE_DIR, 'config', 'catalogue.json')
     with open(chemin, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+
+def _disponible(app, presents):
+    """Un outil n'est proposable que si son fichier est la ET son empreinte
+    renseignee : sans empreinte, il s'installerait sans aucun controle
+    d'integrite sur le poste du client."""
+    if app['source'] != 'outil':
+        return True
+    return app['id'] in presents and bool((app.get('sha256') or '').strip())
 
 
 def outils_disponibles():
@@ -224,10 +242,16 @@ def construire_config():
     for app in catalogue['applications']:
         if app['id'] not in choisies:
             continue
-        if app['source'] == 'outil' and app['id'] not in disponibles:
-            raise ErreurFormulaire(
-                "L'installeur de " + app['nom'] + " est absent du serveur : "
-                'déposez-le dans outils/ puis rechargez la page.')
+        if app['source'] == 'outil':
+            if app['id'] not in disponibles:
+                raise ErreurFormulaire(
+                    "L'installeur de " + app['nom'] + " est absent du serveur : "
+                    'déposez-le dans outils/ puis rechargez la page.')
+            if not (app.get('sha256') or '').strip():
+                raise ErreurFormulaire(
+                    "L'empreinte SHA-256 de " + app['nom'] + " n'est pas "
+                    'renseignée dans catalogue.json : sans elle, le poste '
+                    "installerait le fichier sans vérifier son intégrité.")
         for cle in app.get('prerequis', []):
             if cle not in prerequis:
                 prerequis.append(cle)
@@ -302,6 +326,35 @@ def construire_config():
     windows['desinstaller'] = ([DESINSTALLATION_AUTORISEE]
                                if _coche('desinstallerCcleaner') else [])
 
+    # Agent GLPI : le TAG rattache le poste a la bonne entite du parc. Sans
+    # lui, l'agent remonterait dans l'entite racine et il faudrait l'y
+    # retrouver puis le deplacer a la main. On refuse donc de generer.
+    bloc_glpi = None
+    if APP_GLPI in choisies:
+        tag = _texte('glpiTag', 60)
+        if not tag:
+            raise ErreurFormulaire(
+                "L'agent GLPI est coché mais aucun TAG n'est résolu : utilisez "
+                'le bouton « Vérifier dans GLPI » avant de générer.')
+        if not RE_TAG.match(tag):
+            raise ErreurFormulaire(
+                'TAG GLPI invalide : 60 caractères au plus, sans guillemet.')
+
+        serveur = glpi.configuration()['serveur']
+        if not serveur:
+            raise ErreurFormulaire(
+                "GLPI n'est pas configuré sur le serveur : GLPI_AGENT_SERVER "
+                'est vide.')
+
+        bloc_glpi = {'tag': tag, 'server': serveur}
+        # Les proprietes voyagent avec l'application : lib/Outils.ps1 les
+        # repasse telles quelles a msiexec, chacune entre guillemets.
+        applications = [
+            dict(a, proprietes={'SERVER': serveur, 'TAG': tag, 'RUNNOW': '1'})
+            if a['id'] == APP_GLPI else a
+            for a in applications
+        ]
+
     return {
         'genereLe': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'client': client,
@@ -313,6 +366,7 @@ def construire_config():
         'anydesk': anydesk,
         'navigateurParDefaut': navigateur,
         'windows': windows,
+        'glpi': bloc_glpi,
         'comptes': comptes,
     }
 
@@ -414,11 +468,14 @@ SANS_CACHE = {
 def page():
     catalogue = _catalogue()
     disponibles = outils_disponibles()
-    applications = [dict(a, disponible=(a['source'] != 'outil' or a['id'] in disponibles))
+    applications = [dict(a, disponible=_disponible(a, disponibles))
                     for a in catalogue['applications']]
+    app_glpi = next((a for a in applications if a['id'] == APP_GLPI), None)
     return render_template('poste.html',
                            categories=catalogue['categories'],
                            applications=applications,
+                           app_glpi=app_glpi,
+                           glpi_configure=glpi.est_configure(),
                            annee_mois=datetime.now().strftime('%y-%m'))
 
 
@@ -436,6 +493,131 @@ def telecharger_zip():
         mimetype='application/zip',
         headers=dict(SANS_CACHE,
                      **{'Content-Disposition': 'attachment; filename="' + nom + '"'}))
+
+
+# -------------------------
+# Agent GLPI
+# -------------------------
+# Ces deux routes vivent derriere l'authentification de la page : elles lisent
+# et ecrivent dans le parc GLPI de production. Seule /poste/outils est ouverte.
+
+
+def _saisie_glpi():
+    """Lit et valide le couple nom de client / code client."""
+    donnees = request.get_json(silent=True) or {}
+    code = str(donnees.get('code', '')).strip()
+    nom_client = str(donnees.get('nomClient', '')).strip()[:80]
+    sous_entite = str(donnees.get('sousEntite', '')).strip()[:60]
+
+    if not glpi.RE_CODE.match(code):
+        raise ErreurFormulaire('Code client invalide : 4 à 6 chiffres attendus.')
+    return code, nom_client, sous_entite
+
+
+def _etat_client(session, code, nom_client, sous_entite):
+    """Forme unique renvoyee par les deux routes, pour que le navigateur n'ait
+    qu'un seul cas a traiter."""
+    entites = session.entites()
+    client = glpi.trouver_client(entites, code)
+
+    if not client:
+        return {
+            'trouve': False,
+            'nomEntitePrevu': glpi.nom_entite(nom_client, code) if nom_client else '',
+            'sousEntites': [],
+            'tagPropose': glpi.tag_propose(nom_client, sous_entite or 'Ordinateurs'),
+        }
+
+    resume = glpi.resume_entite(client)
+    enfants = [glpi.resume_entite(e) for e in glpi.sous_entites(entites, client)]
+
+    # Le TAG deja enregistre dans GLPI fait autorite sur la proposition.
+    choisie = next((e for e in enfants
+                    if e['nom'].lower() == (sous_entite or 'Ordinateurs').lower()), None)
+    tag = (choisie or {}).get('tag') or glpi.tag_propose(
+        resume['nomClient'], sous_entite or 'Ordinateurs')
+
+    return {
+        'trouve': True,
+        'entite': resume,
+        'sousEntites': enfants,
+        'tagPropose': tag,
+        'tagLuDansGlpi': bool((choisie or {}).get('tag')),
+    }
+
+
+@poste_bp.route('/glpi/verifier', methods=['POST'])
+def glpi_verifier():
+    """Lecture seule : rien n'est ecrit dans le parc."""
+    if not glpi.est_configure():
+        return jsonify({'error': "GLPI n'est pas configuré sur le serveur."}), 503
+    try:
+        code, nom_client, sous_entite = _saisie_glpi()
+        with glpi.Session() as session:
+            return jsonify(_etat_client(session, code, nom_client, sous_entite))
+    except ErreurFormulaire as e:
+        return jsonify({'error': str(e)}), 400
+    except glpi.ErreurGlpi as e:
+        return jsonify({'error': str(e)}), 502
+
+
+@poste_bp.route('/glpi/creer', methods=['POST'])
+def glpi_creer():
+    """Ecrit dans le parc : cree l'entite, la sous-entite, et enregistre le TAG.
+
+    Cette derniere ecriture est le correctif du defaut de l'outil interne :
+    sans elle, une generation ulterieure pour le meme client ne retrouverait
+    aucun TAG et il faudrait le saisir a la main dans GLPI.
+    """
+    if not glpi.est_configure():
+        return jsonify({'error': "GLPI n'est pas configuré sur le serveur."}), 503
+    try:
+        code, nom_client, sous_entite = _saisie_glpi()
+        sous_entite = sous_entite or 'Ordinateurs'
+        if not nom_client:
+            raise ErreurFormulaire('Nom du client obligatoire pour créer une entité.')
+
+        tag = str((request.get_json(silent=True) or {}).get('tag', '')).strip()[:60]
+        if not tag:
+            tag = glpi.tag_propose(nom_client, sous_entite)
+        if not RE_TAG.match(tag):
+            raise ErreurFormulaire('TAG invalide : 60 caractères au plus, sans guillemet.')
+
+        with glpi.Session() as session:
+            entites = session.entites()
+            client = glpi.trouver_client(entites, code)
+
+            if not client:
+                identifiant = session.creer(glpi.nom_entite(nom_client, code),
+                                            glpi.ENTITE_RACINE)
+            else:
+                identifiant = int(client['id'])
+
+            # GLPI refuse la creation d'une sous-entite si l'entite parente
+            # n'est pas dans le perimetre actif.
+            session.activer_entites(identifiant)
+
+            entites = session.entites()
+            client = next((e for e in entites if int(e['id']) == identifiant), None)
+            if not client:
+                raise glpi.ErreurGlpi("L'entité créée est introuvable après coup.")
+
+            enfant = next((e for e in glpi.sous_entites(entites, client)
+                           if (e.get('name') or '').lower() == sous_entite.lower()), None)
+            if not enfant:
+                enfant_id = session.creer(sous_entite, identifiant)
+            else:
+                enfant_id = int(enfant['id'])
+
+            session.ecrire_tag(enfant_id, tag)
+
+            etat = _etat_client(session, code, nom_client, sous_entite)
+            etat['cree'] = True
+            return jsonify(etat)
+    except ErreurFormulaire as e:
+        return jsonify({'error': str(e)}), 400
+    except glpi.ErreurGlpi as e:
+        return jsonify({'error': str(e)}), 502
 
 
 @poste_bp.route('/outils/<path:nom>')

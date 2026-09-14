@@ -11,7 +11,7 @@ RUN useradd --create-home --uid 1000 toshibamanager
 # Code applicatif (uploads/ est exclu via .dockerignore — remplacé par un volume au runtime)
 # toshiba_template.py n'est pas copié : prototype standalone antérieur à
 # app.py, jamais importé par celui-ci, donc sans utilité dans l'image (T022).
-COPY app.py addressbook.py installer_routes.py poste_routes.py ./
+COPY app.py addressbook.py installer_routes.py poste_routes.py glpi.py ./
 COPY modele_xml/ ./modele_xml/
 COPY installer/ ./installer/
 # Toolkit PowerShell de la page « Installer un poste » : il est zippé à la volée

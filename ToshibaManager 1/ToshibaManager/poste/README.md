@@ -74,3 +74,10 @@ numérique et de Chrome par défaut dès sa première ouverture de session.
   retour non nul si c'est le mauvais.
 - **Antivirus** : la désinstallation ne touchera jamais SentinelOne, Defender,
   CrowdStrike, ESET ou Bitdefender, quel que soit le motif demandé.
+- **Agent GLPI** : il est installé par `msiexec` avec les propriétés `SERVER`,
+  `TAG` et `RUNNOW` passées en ligne de commande — la méthode documentée par
+  Teclib, qui évite de réécrire le MSI. Chaque valeur part entre guillemets :
+  un TAG comme `ATELIER de la VIREOrdinateurs` serait sinon tronqué au premier
+  espace et le poste remonterait dans la mauvaise entité, sans message d'erreur.
+  Le TAG provient de la section GLPI de la page et vaut son pesant : sans lui
+  l'agent remonte dans l'entité racine.

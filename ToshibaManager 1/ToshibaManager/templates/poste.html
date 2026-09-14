@@ -108,7 +108,7 @@
                         <button type="button" class="poste-tout" data-tout>Tout cocher</button>
                     </div>
 
-                    {% for app in applications if app.categorie == categorie.id %}
+                    {% for app in applications if app.categorie == categorie.id and not app.requiertGlpi %}
                     <label class="poste-case {% if not app.disponible %}poste-case--indisponible{% endif %}">
                         <input type="checkbox" name="app" value="{{ app.id }}"
                                data-app="{{ app.id }}"
@@ -231,6 +231,82 @@
                        à réserver aux postes en libre-service.</small></p>
                 </section>
             </main>
+
+            <!-- ============ 4. Agent GLPI ============ -->
+            <p class="poste-etape">4 — Inventaire GLPI</p>
+
+            <section class="smtp-card">
+                <div class="smtp-card-heading">
+                    <span class="smtp-card-icon" aria-hidden="true">📇</span>
+                    <div><p class="smtp-eyebrow">PARC</p><h2>Agent GLPI</h2></div>
+                </div>
+
+                {% if not glpi_configure %}
+                <p class="poste-avertissement">
+                    <small><strong>GLPI n'est pas configuré sur le serveur.</strong>
+                    Renseignez <code>GLPI_API_URL</code>, <code>GLPI_AGENT_SERVER</code>,
+                    <code>GLPI_APP_TOKEN</code> et <code>GLPI_USER_TOKEN</code> dans le
+                    <code>.env</code> du conteneur, puis redémarrez-le.</small>
+                </p>
+                {% endif %}
+
+                {% if app_glpi and not app_glpi.disponible %}
+                <p class="poste-avertissement">
+                    <small><strong>L'installeur de l'agent n'est pas disponible.</strong>
+                    Déposez <code>{{ app_glpi.fichier }}</code> dans <code>outils/</code>
+                    sur le serveur, puis relevez son empreinte SHA-256 dans
+                    <code>poste/config/catalogue.json</code>. Sans empreinte, le poste
+                    l'installerait sans vérifier son intégrité.</small>
+                </p>
+                {% endif %}
+
+                {% set glpi_pret = glpi_configure and app_glpi and app_glpi.disponible %}
+                <label class="poste-case {% if not glpi_pret %}poste-case--indisponible{% endif %}">
+                    <input type="checkbox" name="app" value="glpiagent" data-app="glpiagent"
+                           id="caseGlpi" {% if not glpi_pret %}disabled{% endif %}>
+                    <span><strong>Installer l'agent GLPI</strong>
+                    <small>Inventorie le poste et le rattache au client. Le TAG est
+                    obligatoire : sans lui l'agent remonterait dans l'entité racine.</small></span>
+                </label>
+
+                <div class="poste-sous-option" id="blocGlpi" hidden>
+                    <div class="poste-grille">
+                        <div>
+                            <label for="glpiNomClient">Nom du client dans GLPI</label>
+                            <input id="glpiNomClient" type="text" placeholder="AFIDD" maxlength="80">
+                            <p><small>Sans le code : il est ajouté automatiquement.</small></p>
+                        </div>
+                        <div>
+                            <label for="glpiCode">Code client</label>
+                            <input id="glpiCode" type="text" placeholder="51816" maxlength="6"
+                                   inputmode="numeric" pattern="^[0-9]{4,6}$"
+                                   title="4 à 6 chiffres">
+                        </div>
+                    </div>
+
+                    <div class="smtp-buttons">
+                        <button type="button" class="btn btn-secondary" id="glpiVerifier">🔎 Vérifier dans GLPI</button>
+                        <button type="button" class="btn btn-secondary" id="glpiCreer" hidden>➕ Créer dans GLPI</button>
+                    </div>
+
+                    <p class="poste-glpi-etat" id="glpiEtat" hidden></p>
+
+                    <label for="glpiSousEntite">Sous-entité</label>
+                    <select id="glpiSousEntite">
+                        <option value="Ordinateurs">Ordinateurs</option>
+                        <option value="__nouvelle__">Nouvelle sous-entité…</option>
+                    </select>
+
+                    <div id="blocGlpiNouvelle" hidden>
+                        <label for="glpiNouvelleSousEntite">Nom de la nouvelle sous-entité</label>
+                        <input id="glpiNouvelleSousEntite" type="text" placeholder="Serveurs" maxlength="60">
+                    </div>
+
+                    <label for="glpiTag">TAG</label>
+                    <input id="glpiTag" name="glpiTag" type="text" maxlength="60" autocomplete="off">
+                    <p><small id="glpiTagOrigine">Renseigné après la vérification dans GLPI.</small></p>
+                </div>
+            </section>
 
             <div class="smtp-buttons">
                 <button type="submit" class="btn btn-primary">⬇️ Générer le ZIP d'installation</button>

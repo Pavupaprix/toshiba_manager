@@ -23,6 +23,12 @@ services:
       # retombe sur request.url_root, qui peut annoncer http:// derriere un
       # reverse proxy.
       - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-}
+      # Agent GLPI : sans ces variables la section reste desactivee.
+      - GLPI_API_URL=${GLPI_API_URL:-}
+      - GLPI_AGENT_SERVER=${GLPI_AGENT_SERVER:-}
+      - GLPI_APP_TOKEN=${GLPI_APP_TOKEN:-}
+      - GLPI_USER_TOKEN=${GLPI_USER_TOKEN:-}
+      - GLPI_TLS_VERIFICATION=${GLPI_TLS_VERIFICATION:-1}
     volumes:
       - toshiba_data:/app/uploads
       # Archives de pilotes Toshiba, hors depot : deposees sur l'hote.

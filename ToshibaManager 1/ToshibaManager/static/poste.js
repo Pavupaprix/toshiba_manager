@@ -116,7 +116,7 @@
 
     Array.prototype.forEach.call(document.querySelectorAll('input[name="app"]'), function (c) {
         c.addEventListener('change', function () {
-            majAnyDesk(); majChrome(); majPdf(); majBoutonsTout();
+            majAnyDesk(); majChrome(); majPdf(); majBoutonsTout(); majGlpi();
         });
     });
 
@@ -237,6 +237,151 @@
     });
 
     // -------------------------
+    // Agent GLPI
+    // -------------------------
+    // La lecture de GLPI est automatique, l'ecriture dans le parc est un geste
+    // explicite : creer une entite par effet de bord d'une generation de ZIP
+    // serait une erreur qu'on ne rattrape pas.
+    var caseGlpi = document.getElementById('caseGlpi');
+    var blocGlpi = document.getElementById('blocGlpi');
+    var glpiNomClient = document.getElementById('glpiNomClient');
+    var glpiCode = document.getElementById('glpiCode');
+    var glpiSousEntite = document.getElementById('glpiSousEntite');
+    var glpiNouvelle = document.getElementById('glpiNouvelleSousEntite');
+    var blocGlpiNouvelle = document.getElementById('blocGlpiNouvelle');
+    var glpiTag = document.getElementById('glpiTag');
+    var glpiTagOrigine = document.getElementById('glpiTagOrigine');
+    var glpiEtat = document.getElementById('glpiEtat');
+    var boutonVerifier = document.getElementById('glpiVerifier');
+    var boutonCreer = document.getElementById('glpiCreer');
+
+    function sousEntiteChoisie() {
+        if (glpiSousEntite.value === '__nouvelle__') return glpiNouvelle.value.trim();
+        return glpiSousEntite.value;
+    }
+
+    function etatGlpi(texte, type) {
+        glpiEtat.hidden = !texte;
+        glpiEtat.textContent = texte || '';
+        glpiEtat.className = 'poste-glpi-etat' + (type ? ' poste-glpi-etat--' + type : '');
+    }
+
+    function majGlpi() {
+        if (!caseGlpi) return;
+        blocGlpi.hidden = !caseGlpi.checked;
+        // Reprend ce qui est deja saisi en section 1 plutot que de le redemander.
+        if (caseGlpi.checked) {
+            if (!glpiNomClient.value) glpiNomClient.value = champClient.value.trim();
+            if (!glpiCode.value) glpiCode.value = champCode.value.trim();
+        }
+    }
+
+    function tagPropose() {
+        return glpiNomClient.value.trim() + sousEntiteChoisie();
+    }
+
+    if (caseGlpi) {
+        caseGlpi.addEventListener('change', majGlpi);
+
+        glpiSousEntite.addEventListener('change', function () {
+            blocGlpiNouvelle.hidden = glpiSousEntite.value !== '__nouvelle__';
+            var option = glpiSousEntite.options[glpiSousEntite.selectedIndex];
+            var tag = option ? option.dataset.tag : '';
+            // Le TAG deja enregistre dans GLPI fait autorite sur la proposition.
+            if (tag) {
+                glpiTag.value = tag;
+                glpiTagOrigine.textContent = 'Lu dans GLPI sur cette sous-entité.';
+            } else {
+                glpiTag.value = tagPropose();
+                glpiTagOrigine.textContent = 'Proposé : ce TAG sera enregistré dans GLPI à la création.';
+            }
+        });
+
+        glpiNouvelle.addEventListener('input', function () {
+            glpiTag.value = tagPropose();
+        });
+    }
+
+    function appliquerReponseGlpi(r) {
+        boutonCreer.hidden = !!r.trouve;
+
+        // La liste des sous-entites vient de GLPI ; chacune porte son TAG.
+        glpiSousEntite.innerHTML = '';
+        var noms = (r.sousEntites || []).map(function (e) { return e.nom; });
+        if (noms.indexOf('Ordinateurs') === -1) noms.unshift('Ordinateurs');
+        noms.forEach(function (nom) {
+            var o = document.createElement('option');
+            o.value = nom;
+            o.textContent = nom;
+            var trouvee = (r.sousEntites || []).filter(function (e) { return e.nom === nom; })[0];
+            if (trouvee && trouvee.tag) {
+                o.dataset.tag = trouvee.tag;
+                o.textContent = nom + ' — TAG ' + trouvee.tag;
+            }
+            glpiSousEntite.appendChild(o);
+        });
+        var oNouvelle = document.createElement('option');
+        oNouvelle.value = '__nouvelle__';
+        oNouvelle.textContent = 'Nouvelle sous-entité…';
+        glpiSousEntite.appendChild(oNouvelle);
+        glpiSousEntite.value = 'Ordinateurs';
+        blocGlpiNouvelle.hidden = true;
+
+        glpiTag.value = r.tagPropose || '';
+        glpiTagOrigine.textContent = r.tagLuDansGlpi
+            ? 'Lu dans GLPI sur cette sous-entité.'
+            : 'Proposé : ce TAG sera enregistré dans GLPI à la création.';
+
+        if (r.trouve) {
+            if (r.entite && r.entite.nomClient) glpiNomClient.value = r.entite.nomClient;
+            etatGlpi('Client trouvé : ' + (r.entite ? r.entite.nomComplet : ''), 'ok');
+        } else {
+            etatGlpi('Client absent de GLPI. Il sera créé sous le nom « '
+                     + (r.nomEntitePrevu || '?') + ' ».', 'absent');
+        }
+    }
+
+    function appelGlpi(chemin, corps) {
+        return fetch(chemin, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(corps)
+        }).then(function (reponse) {
+            return reponse.json().then(function (donnees) {
+                if (!reponse.ok) {
+                    throw new Error(donnees.error || 'GLPI a répondu ' + reponse.status);
+                }
+                return donnees;
+            });
+        });
+    }
+
+    if (boutonVerifier) {
+        boutonVerifier.addEventListener('click', function () {
+            etatGlpi('Interrogation de GLPI…', '');
+            appelGlpi('/poste/glpi/verifier', {
+                code: glpiCode.value.trim(),
+                nomClient: glpiNomClient.value.trim(),
+                sousEntite: sousEntiteChoisie()
+            }).then(appliquerReponseGlpi)
+              .catch(function (e) { etatGlpi(e.message, 'erreur'); });
+        });
+
+        boutonCreer.addEventListener('click', function () {
+            etatGlpi('Création dans GLPI…', '');
+            appelGlpi('/poste/glpi/creer', {
+                code: glpiCode.value.trim(),
+                nomClient: glpiNomClient.value.trim(),
+                sousEntite: sousEntiteChoisie(),
+                tag: glpiTag.value.trim()
+            }).then(function (r) {
+                appliquerReponseGlpi(r);
+                etatGlpi('Entité créée dans GLPI et TAG enregistré.', 'ok');
+            }).catch(function (e) { etatGlpi(e.message, 'erreur'); });
+        });
+    }
+
+    // -------------------------
     // Export / import des reglages
     // -------------------------
     function lireReglages() {
@@ -346,6 +491,14 @@
     // formulaire rempli par une page d'erreur.
     form.addEventListener('submit', function (e) {
         e.preventDefault();
+
+        if (caseGlpi && caseGlpi.checked && !glpiTag.value.trim()) {
+            afficher("L'agent GLPI est coché mais aucun TAG n'est résolu : "
+                     + 'utilisez le bouton « Vérifier dans GLPI ».', true);
+            glpiTag.focus();
+            return;
+        }
+
         champComptes.value = JSON.stringify(lireComptes(true));
         afficher('Génération en cours…', false);
 
@@ -388,4 +541,5 @@
     majChrome();
     majPdf();
     majBoutonsTout();
+    majGlpi();
 })();

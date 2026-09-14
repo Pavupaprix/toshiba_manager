@@ -85,8 +85,22 @@ function Install-Outil {
                 $code = $proc.ExitCode
             }
             'msi' {
+                $arguments = @('/i', "`"$installeur`"", '/quiet', '/norestart')
+
+                # Proprietes MSI passees en ligne de commande : c'est la
+                # methode documentee par Teclib pour l'agent GLPI, et elle
+                # evite d'avoir a reecrire le MSI. Chaque valeur est mise entre
+                # guillemets : un TAG comme "ATELIER de la VIREOrdinateurs"
+                # serait sinon tronque au premier espace, et le poste
+                # remonterait dans la mauvaise entite sans le moindre message.
+                if ($App.proprietes) {
+                    foreach ($propriete in $App.proprietes.PSObject.Properties) {
+                        $arguments += ('{0}="{1}"' -f $propriete.Name, $propriete.Value)
+                    }
+                }
+
                 $proc = Start-Process -FilePath 'msiexec.exe' -Wait -PassThru -ErrorAction Stop `
-                            -ArgumentList '/i', "`"$installeur`"", '/qn', '/norestart'
+                            -ArgumentList $arguments
                 $code = $proc.ExitCode
             }
             'exe' {

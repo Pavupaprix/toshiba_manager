@@ -132,6 +132,18 @@
       "sha256": "D800F1765539194A088CD06B2B8A73C40C4A1001425F2A892F495A53DB9DA2DE"
     },
     {
+      "id": "glpiagent",
+      "nom": "Agent GLPI",
+      "description": "Inventaire du parc. Rattache le poste au client via son TAG, renseigné dans la section GLPI ci-dessous.",
+      "categorie": "depannage",
+      "source": "outil",
+      "fichier": "GLPI-Agent-1.12-x64.msi",
+      "type": "msi",
+      "sha256": "",
+      "_commentaire": "sha256 a renseigner apres depot du MSI dans outils/",
+      "requiertGlpi": true
+    },
+    {
       "id": "transwiz",
       "nom": "Transwiz",
       "description": "Sauvegarde et transfert de profils Windows.",

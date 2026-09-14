@@ -2180,3 +2180,34 @@ a.btn { text-decoration: none; }
     opacity: .4;
     cursor: not-allowed;
 }
+
+
+/* Retour de l'interrogation GLPI : trois etats, trois couleurs. */
+.poste-glpi-etat {
+    margin: 12px 0;
+    padding: 10px 14px;
+    border-left: 3px solid var(--line-strong);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--surface-soft);
+    font-size: .88rem;
+    color: var(--ink-soft);
+}
+
+.poste-glpi-etat--ok {
+    border-left-color: var(--success);
+    background: var(--success-soft);
+}
+
+.poste-glpi-etat--absent {
+    border-left-color: var(--amber);
+    background: var(--warn-soft);
+}
+
+.poste-glpi-etat--erreur {
+    border-left-color: var(--danger);
+    background: var(--danger-soft);
+}
+
+[data-theme="dark"] .poste-glpi-etat--ok     { background: rgba(16, 185, 129, .10); }
+[data-theme="dark"] .poste-glpi-etat--absent { background: rgba(245, 158, 11, .10); }
+[data-theme="dark"] .poste-glpi-etat--erreur { background: rgba(239, 68, 68, .10); }
