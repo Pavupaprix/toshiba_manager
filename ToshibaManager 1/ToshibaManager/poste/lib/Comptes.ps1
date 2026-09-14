@@ -107,11 +107,16 @@ function Set-CompteLocal {
 function Set-Autologon {
     param(
         [string]$Nom,
+        [AllowEmptyString()]
         [string]$MotDePasse
     )
 
     # Windows n'a pas d'autre moyen : le mot de passe est stocke en clair dans
     # la ruche. C'est annonce sur la page web, sous la case.
+    #
+    # Un compte sans mot de passe fonctionne aussi, mais DefaultPassword doit
+    # exister, meme vide : si la valeur manque, Winlogon remet AutoAdminLogon a
+    # 0 des la premiere ouverture de session et desactive tout en silence.
     $cle = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
     try {
         Set-ItemProperty -Path $cle -Name 'AutoAdminLogon' -Value '1' -ErrorAction Stop

@@ -180,10 +180,6 @@ def _valider_comptes(brut, mot_de_passe_derive):
             if autologons > 1:
                 raise ErreurFormulaire(
                     'Un seul compte peut être en ouverture de session automatique.')
-            if not mot_de_passe:
-                raise ErreurFormulaire(
-                    nom + ' est en connexion automatique : Windows exige un '
-                    'mot de passe pour cela.')
 
         valides.append({
             'nom': nom,
