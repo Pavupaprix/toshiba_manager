@@ -549,9 +549,8 @@
     // -------------------------
     // Etat initial
     // -------------------------
-    // Le compte adminomb est propose d'office : c'est celui de toutes les
-    // interventions OMB. Il reste supprimable.
-    ajouterCompte({ nom: 'adminomb', admin: true, motDePasseNExpireJamais: true, derive: true });
+    // Aucun compte propose d'office : la liste part vide et le technicien
+    // ajoute ce dont il a besoin. Beaucoup d'interventions n'en creent aucun.
     majNomPoste();
     majAnyDesk();
     majChrome();
