@@ -219,6 +219,16 @@ def tag_propose(nom_client, sous_entite):
     return (nom_client or '').strip() + (sous_entite or '').strip()
 
 
+def _entier(valeur, defaut=-1):
+    """GLPI renvoie null, pas -1, pour le parent de l'entite racine : un int()
+    direct sur cette valeur echoue. Releve sur le parc reel, ou la lecture des
+    sous-entites plantait des le premier client verifie."""
+    try:
+        return int(valeur)
+    except (TypeError, ValueError):
+        return defaut
+
+
 def _dernier_segment(completename):
     return (completename or '').split('>')[-1].strip()
 
@@ -235,8 +245,8 @@ def trouver_client(entites, code):
 
 def sous_entites(entites, client):
     """Enfants directs du client, tries par nom."""
-    parent = int(client['id'])
-    enfants = [e for e in entites if int(e.get('entities_id', -1)) == parent]
+    parent = _entier(client.get('id'))
+    enfants = [e for e in entites if _entier(e.get('entities_id')) == parent]
     return sorted(enfants, key=lambda e: (e.get('name') or '').lower())
 
 
@@ -245,7 +255,7 @@ def resume_entite(e):
     nom_complet = e.get('completename') or e.get('name') or ''
     nom, code = decouper_nom_client(_dernier_segment(nom_complet))
     return {
-        'id': int(e['id']),
+        'id': _entier(e.get('id')),
         'nom': e.get('name') or '',
         'nomComplet': nom_complet,
         'nomClient': nom,

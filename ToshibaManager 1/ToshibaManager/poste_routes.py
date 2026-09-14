@@ -591,14 +591,14 @@ def glpi_creer():
                 identifiant = session.creer(glpi.nom_entite(nom_client, code),
                                             glpi.ENTITE_RACINE)
             else:
-                identifiant = int(client['id'])
+                identifiant = glpi._entier(client.get('id'))
 
             # GLPI refuse la creation d'une sous-entite si l'entite parente
             # n'est pas dans le perimetre actif.
             session.activer_entites(identifiant)
 
             entites = session.entites()
-            client = next((e for e in entites if int(e['id']) == identifiant), None)
+            client = next((e for e in entites if glpi._entier(e.get('id')) == identifiant), None)
             if not client:
                 raise glpi.ErreurGlpi("L'entité créée est introuvable après coup.")
 
@@ -607,7 +607,7 @@ def glpi_creer():
             if not enfant:
                 enfant_id = session.creer(sous_entite, identifiant)
             else:
-                enfant_id = int(enfant['id'])
+                enfant_id = glpi._entier(enfant.get('id'))
 
             session.ecrire_tag(enfant_id, tag)
 
