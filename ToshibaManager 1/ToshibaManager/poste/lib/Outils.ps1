@@ -12,6 +12,30 @@
     lance.
 #>
 
+function Remove-Dossier {
+    <#
+        Supprime un dossier et tout son contenu, sans jamais rien afficher.
+
+        [IO.Directory]::Delete plutot que Remove-Item : sur un poste client,
+        Remove-Item -Recurse -Force a leve une PSArgumentException que meme
+        -ErrorAction SilentlyContinue ne masquait pas, en nommant un chemin
+        tronque au profil. La cause n'a pas pu etre reproduite ailleurs ;
+        l'appel .NET ne passe pas par le fournisseur PowerShell et n'a pas ce
+        comportement. Le chemin est journalise en cas d'echec, pour qu'une
+        recidive soit diagnosticable.
+    #>
+    param([string]$Chemin)
+
+    if (-not $Chemin) { return }
+    try {
+        if ([System.IO.Directory]::Exists($Chemin)) {
+            [System.IO.Directory]::Delete($Chemin, $true)
+        }
+    } catch {
+        Ecrire ('  Dossier temporaire conserve ({0}) : {1}' -f $Chemin, $_.Exception.Message) 'DarkGray'
+    }
+}
+
 function Get-Outil {
     param(
         [string]$BaseUrl,
@@ -121,7 +145,7 @@ function Install-Outil {
                 # Outil portable : on l'extrait sous Program Files et on pose un
                 # raccourci, sinon il resterait introuvable pour l'utilisateur.
                 $cible = Join-Path $env:ProgramFiles ('OMB\' + $App.dossierCible)
-                if (Test-Path -LiteralPath $cible) { Remove-Item -LiteralPath $cible -Recurse -Force -ErrorAction SilentlyContinue }
+                Remove-Dossier $cible
                 New-Item -ItemType Directory -Path $cible -Force | Out-Null
                 Expand-Archive -LiteralPath $installeur -DestinationPath $cible -Force -ErrorAction Stop
 
