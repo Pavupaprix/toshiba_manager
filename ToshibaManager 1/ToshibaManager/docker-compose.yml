@@ -14,15 +14,27 @@ services:
       - "${PORT:-5000}:5000"
     environment:
       - PORT=5000
+      # Sans fuseau, le conteneur horodate en UTC : la date inscrite dans
+      # config.json ne correspondrait pas a celle du journal sur le poste.
+      - TZ=${TZ:-Europe/Paris}
       - DRIVERS_DIR=/app/drivers
+      - OUTILS_DIR=/app/outils
       # URL publique du service, utilisee dans le .bat genere. Sans elle, on
       # retombe sur request.url_root, qui peut annoncer http:// derriere un
       # reverse proxy.
       - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-}
+      # Agent GLPI : sans ces variables la section reste desactivee.
+      - GLPI_API_URL=${GLPI_API_URL:-}
+      - GLPI_AGENT_SERVER=${GLPI_AGENT_SERVER:-}
+      - GLPI_APP_TOKEN=${GLPI_APP_TOKEN:-}
+      - GLPI_USER_TOKEN=${GLPI_USER_TOKEN:-}
+      - GLPI_TLS_VERIFICATION=${GLPI_TLS_VERIFICATION:-1}
     volumes:
       - toshiba_data:/app/uploads
       # Archives de pilotes Toshiba, hors depot : deposees sur l'hote.
       - ../../drivers:/app/drivers:ro
+      # Installeurs specifiques OMB, hors depot : deposes sur l'hote.
+      - ../../outils:/app/outils:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:5000/healthz').status == 200 else sys.exit(1)"]
       interval: 30s

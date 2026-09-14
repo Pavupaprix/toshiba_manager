@@ -18,7 +18,7 @@ du reverse proxy (M2).
 | GET | `/load-default-xml` | Variante legacy du chargement par défaut |
 | POST | `/api/upload` | Importe un template XML (remplace le template actif) |
 | GET | `/api/download` | Télécharge le template XML actif |
-| GET | `/download-bat` | Télécharge `Toshiba+Partage.bat` |
+| POST | `/download-bat` | Génère `Toshiba+Partage.bat` avec le mot de passe saisi |
 | POST | `/api/addressbook/parse` | Analyse un classeur importé |
 | POST | `/api/addressbook/generate` | Génère le CSV du carnet d'adresses |
 | DELETE | `/api/groups/<gid>` | Supprime un groupe du template XML actif |

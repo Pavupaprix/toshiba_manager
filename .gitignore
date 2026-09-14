@@ -15,6 +15,10 @@ ToshibaManager 1/ToshibaManager/uploads/*
 # Montees en lecture seule dans le conteneur via ../../drivers:/app/drivers:ro
 drivers/
 
+# --- Installeurs specifiques OMB (~152 Mo, deposes sur l'hote) ---
+# Montes en lecture seule dans le conteneur via ../../outils:/app/outils:ro
+outils/
+
 # --- Sauvegardes horodatees des DEVMODE de reference ---
 ToshibaManager 1/ToshibaManager/installer/devmode/*.bak
 

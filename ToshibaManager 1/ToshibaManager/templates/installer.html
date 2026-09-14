@@ -101,10 +101,24 @@
                     </div>
                     <p>Prépare le poste à recevoir les numérisations du copieur : compte
                        local dédié, dossier de destination et partage réseau.</p>
+
+                    <label for="partageCode">Code client <small>— facultatif</small></label>
+                    <input id="partageCode" type="text" maxlength="16"
+                           inputmode="numeric" autocomplete="off">
+
+                    <label for="partageMotDePasse">Mot de passe du compte <code>Toshiba</code></label>
+                    <input id="partageMotDePasse" type="text" maxlength="64" autocomplete="off"
+                           placeholder="Saisissez le mot de passe ici">
+                    <p><small>Pré-rempli depuis le code client, modifiable. C'est ce mot de
+                       passe qu'il faudra saisir dans la destination de numérisation du
+                       copieur : les deux doivent correspondre.</small></p>
+
                     <div class="smtp-buttons">
-                        <a class="btn btn-secondary" href="{{ url_for('download_bat') }}"
-                           download="Toshiba+Partage.bat">💾 Partage Scan vers dossier</a>
+                        <button type="button" class="btn btn-secondary" id="partageTelecharger">💾 Partage Scan vers dossier</button>
                     </div>
+
+                    <p class="poste-glpi-etat" id="partageEtat" hidden></p>
+
                     <p><small>Indépendant de l'installation du copieur. À lancer en tant
                        qu'administrateur sur le poste.</small></p>
                 </section>
@@ -151,6 +165,7 @@
         </section>
     </div>
 
+    <script src="{{ url_for('static', filename='partage.js') }}"></script>
     <script>document.getElementById('themeToggle').addEventListener('click',function(){var cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',cur);localStorage.setItem('ts-theme',cur);});</script>
 </body>
 </html>

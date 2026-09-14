@@ -1,0 +1,93 @@
+# Toolkit « Installer un poste »
+
+Ce dossier est le contenu du ZIP généré par la page `/poste` de ToshibaManager.
+Il n'est pas destiné à être lancé depuis le dépôt : le serveur l'archive avec un
+`config.json` décrivant l'intervention.
+
+## Utilisation sur le poste client
+
+1. Décompressez le ZIP entier (les sous-dossiers `lib/` et `config/` sont
+   nécessaires).
+2. Double-cliquez sur `Installer-Poste.bat` et acceptez l'élévation UAC.
+3. Laissez le script aller au bout, lisez le résumé.
+4. Répondez **oui** à la question finale : c'est ce qui efface les mots de passe
+   du poste.
+
+> `config.json` contient en clair le mot de passe d'accès sans surveillance
+> AnyDesk et ceux des comptes locaux. Il ne doit pas rester sur le poste.
+
+Le journal est écrit dans `%ProgramData%\OMB\InstallationPoste\` et **ne
+contient aucun mot de passe** : il survit volontairement au nettoyage.
+
+## Contenu
+
+| Fichier | Rôle |
+|---|---|
+| `Installer-Poste.bat` | Lanceur : élévation UAC puis appel du script principal |
+| `Install-Poste.ps1` | Orchestrateur : lit `config.json`, enchaîne les phases, résumé, nettoyage |
+| `lib/Journal.ps1` | Affichage et journalisation, avec expurgation des mots de passe |
+| `lib/Winget.ps1` | Installation/mise à jour winget, détection d'Office |
+| `lib/Outils.ps1` | Installeurs OMB : téléchargement, vérification SHA-256, exécution silencieuse |
+| `lib/Comptes.ps1` | Comptes locaux (groupes par SID) et ouverture de session automatique |
+| `lib/AnyDesk.ps1` | Accès sans surveillance |
+| `lib/Navigateur.ps1` | Chrome par défaut (DISM, puis SetUserFTA si présent) |
+| `lib/AgentGlpi.ps1` | Agent GLPI : installation, ou réétiquetage s'il est déjà là |
+| `lib/Windows.ps1` | Réglages système, désinstallation ciblée, renommage |
+| `config/catalogue.json` | Catalogue de référence des applications (source de vérité côté serveur) |
+
+## Ordre d'exécution
+
+Nettoyage → applications winget → installeurs OMB → AnyDesk → réglages Windows →
+navigateur par défaut → comptes locaux → renommage → résumé → nettoyage.
+
+Les comptes sont créés **après** les réglages Windows et les associations DISM :
+c'est ce qui fait qu'un compte créé ici hérite des extensions visibles, du pavé
+numérique et de Chrome par défaut dès sa première ouverture de session.
+
+## Points d'attention
+
+- **Le script est rejouable.** Une application présente est mise à jour, un
+  compte existant voit son mot de passe réinitialisé. Relancer après un
+  redémarrage est la première chose à faire en cas d'échec.
+- **`EnableLUA=0`** (UAC « désactiver complètement ») empêche les applications
+  du Store de s'ouvrir et exige un redémarrage. C'est un effet de bord Windows,
+  pas un bug du script.
+- **Chrome par défaut ne s'applique jamais à la session déjà ouverte.** Windows
+  verrouille ce réglage par une empreinte que seule son interface sait calculer.
+  Le script pose donc la stratégie `DefaultAssociationsConfiguration`, relue à
+  chaque ouverture de session — le changement se voit à la reconnexion, pour
+  tous les comptes. Le fichier d'associations vit dans
+  `%ProgramData%\OMB\associations-omb.xml` : le supprimer casserait le réglage.
+  Les éditions Famille de Windows peuvent ignorer cette stratégie ; les comptes
+  créés par le script restent couverts par DISM dans tous les cas.
+- **SetUserFTA n'est pas fourni** : seul outil capable de basculer la session en
+  cours sans déconnexion, mais son auteur exige une licence pour un usage
+  professionnel. Déposer `SetUserFTA.exe` dans `lib/` suffit à l'activer.
+- **Réseau qui inspecte le TLS** (proxy d'entreprise ou d'école qui resigne les
+  certificats) : winget refuse la source `msstore`, qui épingle les certificats
+  de Microsoft, avec `0x8a15005e : The server certificate did not match`. Le
+  script épingle donc `--source winget`, dont toutes nos applications
+  proviennent, ce qui évite la question. Le téléchargement des installeurs OMB
+  n'est pas concerné : vérifié sur un réseau qui inspecte le TLS, il passe sans
+  rien signaler.
+- **VNC Viewer** : le commutateur silencieux `/S` de l'installeur RealVNC n'a
+  pas encore été validé sur une machine réelle. Le résumé signalera un code de
+  retour non nul si c'est le mauvais.
+- **Antivirus** : la désinstallation ne touchera jamais SentinelOne, Defender,
+  CrowdStrike, ESET ou Bitdefender, quel que soit le motif demandé.
+- **Agent GLPI : un poste l'a souvent déjà.** Les machines préparées à
+  l'atelier sortent avec le tag `prepatelierOrdinateurs`, et `msiexec /i`
+  par-dessus une installation existante échoue — code 1603, précédé dans le
+  journal MSI d'une erreur 1316 à l'action `PublishProduct`. Le script
+  distingue donc trois états : agent absent, il installe ; agent présent et
+  sain, il réécrit seulement `SERVER` et `TAG` dans
+  `HKLM\SOFTWARE\GLPI-Agent` puis relance le service, ce qui prend quelques
+  secondes au lieu de plusieurs minutes ; agent enregistré mais incomplet, il
+  désinstalle puis réinstalle proprement.
+- **Agent GLPI** : il est installé par `msiexec` avec les propriétés `SERVER`,
+  `TAG` et `RUNNOW` passées en ligne de commande — la méthode documentée par
+  Teclib, qui évite de réécrire le MSI. Chaque valeur part entre guillemets :
+  un TAG comme `ATELIER de la VIREOrdinateurs` serait sinon tronqué au premier
+  espace et le poste remonterait dans la mauvaise entité, sans message d'erreur.
+  Le TAG provient de la section GLPI de la page et vaut son pesant : sans lui
+  l'agent remonte dans l'entité racine.

@@ -6,7 +6,7 @@ REM ====================================================
 
 REM --- Variables ---
 set "UserName=Toshiba"
-set "Password=T0sh!b@"
+set "Password=__MOT_DE_PASSE__"
 set "FolderPath=C:\Scan"
 set "ShareName=Scan"
 set "CommentPartage=Scan copieur TOSHIBA"
@@ -19,9 +19,12 @@ echo ============================
 REM Creation de l'utilisateur local Toshiba (ignore si deja cree)
 net user %UserName% >nul 2>&1
 if %errorlevel%==0 goto userExists
-net user %UserName% %Password% /add /comment:"%UserName%" /fullname:"%UserName%" /logonpasswordchg:no
+net user %UserName% "%Password%" /add /comment:"%UserName%" /fullname:"%UserName%" /logonpasswordchg:no
 if errorlevel 1 goto :echec
 :userExists
+REM Compte deja present : on applique le mot de passe saisi, sinon le
+REM copieur configure avec celui-ci ne pourrait plus deposer ses scans.
+net user %UserName% "%Password%" >nul
 echo Utilisateur %UserName% pret.
 
 REM Le mot de passe ne doit pas expirer

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, send_file, redirect,
 import hashlib
 import xml.etree.ElementTree as ET
 import os
+import re
 import smtplib
 import ssl
 import sys
@@ -12,6 +13,7 @@ from email.mime.text import MIMEText
 
 import addressbook
 from installer_routes import installer_bp
+from poste_routes import poste_bp
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,6 +25,9 @@ XML_FILE = os.path.join(app.config['UPLOAD_FOLDER'], 'templates.xml')
 
 # Distribution du script d'installation des copieurs (voir installer_routes.py).
 app.register_blueprint(installer_bp)
+
+# Génération du script d'installation d'un poste Windows (voir poste_routes.py).
+app.register_blueprint(poste_bp)
 
 # Cloudflare met les .css et .js en cache plusieurs heures, quoi que renvoie
 # l'application : une feuille de style périmée a déjà été servie après un
@@ -166,12 +171,44 @@ def download_xml():
         return send_file(XML_FILE, as_attachment=True, download_name='templates.xml')
     return jsonify({'error': 'Fichier non trouvé'}), 404
 
-@app.route('/download-bat')
+# Le mot de passe du compte de depot des scans n'est plus ecrit dans le
+# depot : il est saisi sur la page et injecte a la generation. Le gabarit
+# porte un marqueur a la place.
+MARQUEUR_MOT_DE_PASSE = '__MOT_DE_PASSE__'
+
+# Cette valeur part dans un fichier .bat, a l'interieur de set "Password=...".
+# Un guillemet fermerait l'affectation, un pourcent declencherait une
+# expansion de variable : ni l'un ni l'autre n'a sa place ici.
+RE_MOT_DE_PASSE_PARTAGE = re.compile(r'^[^"%\x00-\x1f]{1,64}$')
+
+
+@app.route('/download-bat', methods=['POST'])
 def download_bat():
-    bat_path = os.path.join(BASE_DIR, 'Toshiba+Partage.bat')
-    if os.path.exists(bat_path):
-        return send_file(bat_path, as_attachment=True, download_name='Toshiba+Partage.bat')
-    return jsonify({'error': 'Fichier .bat non trouvé'}), 404
+    """Genere le script de partage avec le mot de passe saisi."""
+    motdepasse = (request.form.get('motDePasse') or '').strip()
+    if not motdepasse:
+        return jsonify({'error': 'Renseignez le mot de passe du compte Toshiba.'}), 400
+    if not RE_MOT_DE_PASSE_PARTAGE.match(motdepasse):
+        return jsonify({'error': 'Mot de passe invalide : 64 caractères au plus, '
+                                 'sans guillemet ni signe pourcent.'}), 400
+
+    chemin = os.path.join(BASE_DIR, 'Toshiba+Partage.bat')
+    if not os.path.exists(chemin):
+        return jsonify({'error': 'Gabarit .bat non trouvé'}), 404
+
+    with open(chemin, 'r', encoding='utf-8') as f:
+        contenu = f.read()
+    contenu = contenu.replace(MARQUEUR_MOT_DE_PASSE, motdepasse)
+
+    return app.response_class(
+        contenu.encode('utf-8'),
+        mimetype='application/octet-stream',
+        headers={
+            'Content-Disposition': 'attachment; filename="Toshiba+Partage.bat"',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, private, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+        })
 
 
 # -------------------------
