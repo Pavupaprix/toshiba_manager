@@ -346,20 +346,31 @@ def construire_config():
                 "GLPI n'est pas configuré sur le serveur : GLPI_AGENT_SERVER "
                 'est vide.')
 
-        # Un TAG que porte aucune entite laisserait le poste remonter dans
-        # l'entite racine, sans erreur visible nulle part. On verifie donc
-        # aupres de GLPI avant de laisser sortir le ZIP.
+        # Le TAG doit exister dans GLPI au moment ou le ZIP sort : sinon le
+        # poste remonterait dans l'entite racine, sans erreur visible nulle
+        # part. Plutot que de refuser, on cree ce qui manque -- comme le fait
+        # l'outil interne, qui cree l'entite et l'agent d'un seul tenant. La
+        # page a deja fait confirmer le nom exact de l'entite.
         if glpi.est_configure():
+            code_glpi = _texte('glpiCode', 6)
+            nom_glpi = _texte('glpiNomClient', 80)
+            sous_entite = _texte('glpiSousEntite', 60) or 'Ordinateurs'
+            if code_glpi and not glpi.RE_CODE.match(code_glpi):
+                raise ErreurFormulaire(
+                    'Code client GLPI invalide : 4 à 6 chiffres attendus.')
             try:
                 with glpi.Session() as session:
                     if not glpi.entite_du_tag(session.entites(), tag):
-                        raise ErreurFormulaire(
-                            'Aucune entité GLPI ne porte le TAG « ' + tag + ' ». '
-                            'Utilisez « Créer dans GLPI » : sans entité, le poste '
-                            "remonterait dans l'entité racine.")
+                        if not code_glpi:
+                            raise ErreurFormulaire(
+                                'Aucune entité GLPI ne porte le TAG « ' + tag
+                                + ' », et le code client est vide : impossible '
+                                'de créer le client.')
+                        _assurer_client_glpi(session, code_glpi, nom_glpi,
+                                             sous_entite, tag)
             except glpi.ErreurGlpi as e:
                 raise ErreurFormulaire(
-                    'Impossible de vérifier le TAG auprès de GLPI : ' + str(e))
+                    'GLPI a refusé la préparation du client : ' + str(e))
 
         bloc_glpi = {'tag': tag, 'server': serveur}
         # Les proprietes voyagent avec l'application : lib/Outils.ps1 les
@@ -576,6 +587,50 @@ def glpi_verifier():
         return jsonify({'error': str(e)}), 502
 
 
+def _assurer_client_glpi(session, code, nom_client, sous_entite, tag):
+    """Garantit que le TAG existe sur la bonne sous-entite du bon client.
+
+    Cree ce qui manque : l'entite cliente, sa sous-entite, puis inscrit le TAG.
+    Reproduit le comportement de l'outil interne, qui cree l'entite et l'agent
+    d'un seul tenant. Renvoie True si quelque chose a ete cree.
+    """
+    entites = session.entites()
+    client = glpi.trouver_client(entites, code)
+    cree = False
+
+    if not client:
+        if not nom_client:
+            raise ErreurFormulaire(
+                'Client absent de GLPI et nom manquant : renseignez le nom du '
+                'client pour que son entité puisse être créée.')
+        identifiant = session.creer(glpi.nom_entite(nom_client, code),
+                                    glpi.ENTITE_RACINE)
+        cree = True
+    else:
+        identifiant = glpi._entier(client.get('id'))
+
+    # GLPI refuse la creation d'une sous-entite hors du perimetre actif.
+    session.activer_entites(identifiant)
+
+    entites = session.entites()
+    client = next((e for e in entites if glpi._entier(e.get('id')) == identifiant), None)
+    if not client:
+        raise glpi.ErreurGlpi("L'entité est introuvable après sa création.")
+
+    enfant = next((e for e in glpi.sous_entites(entites, client)
+                   if (e.get('name') or '').lower() == sous_entite.lower()), None)
+    if not enfant:
+        enfant_id = session.creer(sous_entite, identifiant)
+        cree = True
+    else:
+        enfant_id = glpi._entier(enfant.get('id'))
+
+    # Toujours reecrit : c'est ce qui permet de retrouver le TAG au poste
+    # suivant chez le meme client, le defaut de l'outil interne.
+    session.ecrire_tag(enfant_id, tag)
+    return cree
+
+
 @poste_bp.route('/glpi/creer', methods=['POST'])
 def glpi_creer():
     """Ecrit dans le parc : cree l'entite, la sous-entite, et enregistre le TAG.
@@ -599,35 +654,9 @@ def glpi_creer():
             raise ErreurFormulaire('TAG invalide : 60 caractères au plus, sans guillemet.')
 
         with glpi.Session() as session:
-            entites = session.entites()
-            client = glpi.trouver_client(entites, code)
-
-            if not client:
-                identifiant = session.creer(glpi.nom_entite(nom_client, code),
-                                            glpi.ENTITE_RACINE)
-            else:
-                identifiant = glpi._entier(client.get('id'))
-
-            # GLPI refuse la creation d'une sous-entite si l'entite parente
-            # n'est pas dans le perimetre actif.
-            session.activer_entites(identifiant)
-
-            entites = session.entites()
-            client = next((e for e in entites if glpi._entier(e.get('id')) == identifiant), None)
-            if not client:
-                raise glpi.ErreurGlpi("L'entité créée est introuvable après coup.")
-
-            enfant = next((e for e in glpi.sous_entites(entites, client)
-                           if (e.get('name') or '').lower() == sous_entite.lower()), None)
-            if not enfant:
-                enfant_id = session.creer(sous_entite, identifiant)
-            else:
-                enfant_id = glpi._entier(enfant.get('id'))
-
-            session.ecrire_tag(enfant_id, tag)
-
+            cree = _assurer_client_glpi(session, code, nom_client, sous_entite, tag)
             etat = _etat_client(session, code, nom_client, sous_entite)
-            etat['cree'] = True
+            etat['cree'] = cree
             return jsonify(etat)
     except ErreurFormulaire as e:
         return jsonify({'error': str(e)}), 400

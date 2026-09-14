@@ -317,8 +317,11 @@
         });
     }
 
+    var glpiEntitePrevue = '';
+
     function appliquerReponseGlpi(r) {
         boutonCreer.hidden = !!r.trouve;
+        if (r.trouve) glpiEntitePrevue = '';
 
         // La liste des sous-entites vient de GLPI ; chacune porte son TAG.
         glpiSousEntite.innerHTML = '';
@@ -351,9 +354,10 @@
             if (r.entite && r.entite.nomClient) glpiNomClient.value = r.entite.nomClient;
             etatGlpi('Client trouvé : ' + (r.entite ? r.entite.nomComplet : ''), 'ok');
         } else {
-            etatGlpi('Client absent de GLPI. Cliquez sur « Créer dans GLPI » '
-                     + 'pour créer « ' + (r.nomEntitePrevu || '?') + ' » : '
-                     + 'la génération du ZIP ne le fera pas.', 'absent');
+            glpiEntitePrevue = r.nomEntitePrevu || '';
+            etatGlpi('Client absent de GLPI. Il sera créé sous le nom « '
+                     + (r.nomEntitePrevu || '?') + ' » — à la génération du ZIP, '
+                     + 'ou tout de suite avec « Créer dans GLPI ».', 'absent');
         }
     }
 
@@ -513,6 +517,23 @@
                      + 'utilisez le bouton « Vérifier dans GLPI ».', true);
             glpiTag.focus();
             return;
+        }
+
+        if (caseGlpi && caseGlpi.checked) {
+            document.getElementById('glpiSousEntiteRetenue').value = sousEntiteChoisie();
+
+            // L'equivalent du « Confirmez-vous la creation de l'entite ? » de
+            // l'outil interne : rien ne s'ecrit dans le parc sans que le nom
+            // exact ait ete lu et valide.
+            if (glpiEntitePrevue && !confirm(
+                    'Le client est absent de GLPI.\n\n'
+                    + 'L\'entité « ' + glpiEntitePrevue
+                    + ' » et sa sous-entité « ' + sousEntiteChoisie()
+                    + ' » vont être créées dans le parc.\n\n'
+                    + 'Continuer ?')) {
+                afficher('Génération annulée : rien n\'a été créé dans GLPI.', false);
+                return;
+            }
         }
 
         champComptes.value = JSON.stringify(lireComptes(true));

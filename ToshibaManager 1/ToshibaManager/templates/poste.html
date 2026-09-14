@@ -273,12 +273,12 @@
                     <div class="poste-grille">
                         <div>
                             <label for="glpiNomClient">Nom du client dans GLPI</label>
-                            <input id="glpiNomClient" type="text" placeholder="AFIDD" maxlength="80">
+                            <input id="glpiNomClient" name="glpiNomClient" type="text" placeholder="AFIDD" maxlength="80">
                             <p><small>Sans le code : il est ajouté automatiquement.</small></p>
                         </div>
                         <div>
                             <label for="glpiCode">Code client</label>
-                            <input id="glpiCode" type="text" placeholder="51816" maxlength="6"
+                            <input id="glpiCode" name="glpiCode" type="text" placeholder="51816" maxlength="6"
                                    inputmode="numeric" pattern="^[0-9]{4,6}$"
                                    title="4 à 6 chiffres">
                         </div>
@@ -301,6 +301,8 @@
                         <label for="glpiNouvelleSousEntite">Nom de la nouvelle sous-entité</label>
                         <input id="glpiNouvelleSousEntite" type="text" placeholder="Serveurs" maxlength="60">
                     </div>
+
+                    <input type="hidden" name="glpiSousEntite" id="glpiSousEntiteRetenue">
 
                     <label for="glpiTag">TAG</label>
                     <input id="glpiTag" name="glpiTag" type="text" maxlength="60" autocomplete="off">
