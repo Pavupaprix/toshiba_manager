@@ -31,6 +31,7 @@ contient aucun mot de passe** : il survit volontairement au nettoyage.
 | `lib/Comptes.ps1` | Comptes locaux (groupes par SID) et ouverture de session automatique |
 | `lib/AnyDesk.ps1` | Accès sans surveillance |
 | `lib/Navigateur.ps1` | Chrome par défaut (DISM, puis SetUserFTA si présent) |
+| `lib/AgentGlpi.ps1` | Agent GLPI : installation, ou réétiquetage s'il est déjà là |
 | `lib/Windows.ps1` | Réglages système, désinstallation ciblée, renommage |
 | `config/catalogue.json` | Catalogue de référence des applications (source de vérité côté serveur) |
 
@@ -74,6 +75,15 @@ numérique et de Chrome par défaut dès sa première ouverture de session.
   retour non nul si c'est le mauvais.
 - **Antivirus** : la désinstallation ne touchera jamais SentinelOne, Defender,
   CrowdStrike, ESET ou Bitdefender, quel que soit le motif demandé.
+- **Agent GLPI : un poste l'a souvent déjà.** Les machines préparées à
+  l'atelier sortent avec le tag `prepatelierOrdinateurs`, et `msiexec /i`
+  par-dessus une installation existante échoue — code 1603, précédé dans le
+  journal MSI d'une erreur 1316 à l'action `PublishProduct`. Le script
+  distingue donc trois états : agent absent, il installe ; agent présent et
+  sain, il réécrit seulement `SERVER` et `TAG` dans
+  `HKLM\SOFTWARE\GLPI-Agent` puis relance le service, ce qui prend quelques
+  secondes au lieu de plusieurs minutes ; agent enregistré mais incomplet, il
+  désinstalle puis réinstalle proprement.
 - **Agent GLPI** : il est installé par `msiexec` avec les propriétés `SERVER`,
   `TAG` et `RUNNOW` passées en ligne de commande — la méthode documentée par
   Teclib, qui évite de réécrire le MSI. Chaque valeur part entre guillemets :

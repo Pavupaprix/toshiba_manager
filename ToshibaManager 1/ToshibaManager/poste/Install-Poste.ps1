@@ -45,7 +45,7 @@ if (-not (Test-Path $FichierConfig)) {
     exit 1
 }
 
-foreach ($module in 'Journal', 'Winget', 'Outils', 'Comptes', 'AnyDesk', 'Navigateur', 'Windows') {
+foreach ($module in 'Journal', 'Winget', 'Outils', 'AgentGlpi', 'Comptes', 'AnyDesk', 'Navigateur', 'Windows') {
     . (Join-Path $Racine "lib\$module.ps1")
 }
 
@@ -151,7 +151,13 @@ if ($viaOutil.Count -gt 0) {
         $index++
         Ecrire ''
         Ecrire ('[{0}/{1}] {2}' -f $index, $viaOutil.Count, $app.nom) 'Cyan'
-        $statut = Install-Outil -App $app -BaseUrl $config.baseUrl -Travail $Travail
+        # L'agent GLPI a son propre traitement : un poste prepare a l'atelier
+        # l'a deja, et msiexec /i par-dessus une installation existante echoue.
+        if ($app.id -eq 'glpiagent') {
+            $statut = Install-AgentGlpi -App $app -BaseUrl $config.baseUrl -Travail $Travail
+        } else {
+            $statut = Install-Outil -App $app -BaseUrl $config.baseUrl -Travail $Travail
+        }
         Add-Resultat $app.nom $statut $app.fichier
         if ($statut -like '*redemarrage*') { $redemarrageRequis = $true }
     }
