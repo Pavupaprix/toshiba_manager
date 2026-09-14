@@ -139,8 +139,7 @@
       "source": "outil",
       "fichier": "GLPI-Agent-1.12-x64.msi",
       "type": "msi",
-      "sha256": "",
-      "_commentaire": "sha256 a renseigner apres depot du MSI dans outils/",
+      "sha256": "AB2EC1F9B3AB69D0D3F6ED45742374183CAA4B3198D78E21A55D4D4CCD424E19",
       "requiertGlpi": true
     },
     {
