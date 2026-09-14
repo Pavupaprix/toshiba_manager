@@ -2221,17 +2221,25 @@ a.btn { text-decoration: none; }
 /* Les quatre categories d applications tiennent sur une rangee des que la
    largeur le permet, plutot que trois puis une orpheline. Classe dediee :
    .smtp-grid--trois sert aussi a la page des copieurs. */
-/* Deux colonnes, pas quatre : a quatre les cartes tombaient a 225 px, les
-   titres passaient sur deux lignes et le bouton "Tout cocher" etait rogne.
-   Deux rangees de deux placent aussi "Analyse & depannage" a cote d'"Acces a
-   distance", ce qui etait la demande. */
+/* Colonnes typographiques plutot qu'une grille : dans une grille, les lignes
+   s'alignent sur la carte la plus haute, ce qui creusait un grand vide sous
+   "Multimedia & web", qui ne contient que deux entrees. En colonnes, les
+   cartes s'empilent et le navigateur equilibre les hauteurs tout seul --
+   y compris si des applications sont ajoutees plus tard. */
 .poste-grille-apps {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    display: block;
+    column-count: 2;
+    column-gap: 20px;
+}
+
+.poste-grille-apps > section {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    margin: 0 0 20px;
 }
 
 @media (max-width: 760px) {
-    .poste-grille-apps { grid-template-columns: 1fr; }
+    .poste-grille-apps { column-count: 1; }
 }
 
 /* L'en-tete de carte : le titre peut se retrecir, le bouton jamais. Sans
