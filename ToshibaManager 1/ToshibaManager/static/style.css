@@ -2221,21 +2221,24 @@ a.btn { text-decoration: none; }
 /* Les quatre categories d applications tiennent sur une rangee des que la
    largeur le permet, plutot que trois puis une orpheline. Classe dediee :
    .smtp-grid--trois sert aussi a la page des copieurs. */
+/* Deux colonnes, pas quatre : a quatre les cartes tombaient a 225 px, les
+   titres passaient sur deux lignes et le bouton "Tout cocher" etait rogne.
+   Deux rangees de deux placent aussi "Analyse & depannage" a cote d'"Acces a
+   distance", ce qui etait la demande. */
 .poste-grille-apps {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
 }
 
-/* Quatre colonnes fixes plutot qu'auto-fit : la largeur du conteneur laissait
-   auto-fit choisir trois colonnes larges, et la quatriene categorie tombait
-   seule sur une rangee. */
-@media (max-width: 1000px) {
-    .poste-grille-apps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (max-width: 560px) {
+@media (max-width: 760px) {
     .poste-grille-apps { grid-template-columns: 1fr; }
 }
+
+/* L'en-tete de carte : le titre peut se retrecir, le bouton jamais. Sans
+   min-width: 0, un element de grille refuse de passer sous la largeur de son
+   contenu et ecrase son voisin. */
+.smtp-card-heading > div { min-width: 0; }
+.smtp-card-heading .poste-tout { flex-shrink: 0; }
 
 /* Signalement des postes restes dans une autre entite. */
 .poste-glpi-ranger {
