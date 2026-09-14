@@ -346,6 +346,21 @@ def construire_config():
                 "GLPI n'est pas configuré sur le serveur : GLPI_AGENT_SERVER "
                 'est vide.')
 
+        # Un TAG que porte aucune entite laisserait le poste remonter dans
+        # l'entite racine, sans erreur visible nulle part. On verifie donc
+        # aupres de GLPI avant de laisser sortir le ZIP.
+        if glpi.est_configure():
+            try:
+                with glpi.Session() as session:
+                    if not glpi.entite_du_tag(session.entites(), tag):
+                        raise ErreurFormulaire(
+                            'Aucune entité GLPI ne porte le TAG « ' + tag + ' ». '
+                            'Utilisez « Créer dans GLPI » : sans entité, le poste '
+                            "remonterait dans l'entité racine.")
+            except glpi.ErreurGlpi as e:
+                raise ErreurFormulaire(
+                    'Impossible de vérifier le TAG auprès de GLPI : ' + str(e))
+
         bloc_glpi = {'tag': tag, 'server': serveur}
         # Les proprietes voyagent avec l'application : lib/Outils.ps1 les
         # repasse telles quelles a msiexec, chacune entre guillemets.

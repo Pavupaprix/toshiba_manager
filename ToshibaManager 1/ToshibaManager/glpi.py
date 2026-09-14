@@ -233,6 +233,22 @@ def _dernier_segment(completename):
     return (completename or '').split('>')[-1].strip()
 
 
+def entite_du_tag(entites, tag):
+    """Entite portant ce TAG, ou None.
+
+    Sert a refuser la generation d'un ZIP dont le TAG ne correspond a rien :
+    un agent qui annonce un tag inconnu de GLPI remonte dans l'entite racine,
+    et personne ne s'en apercoit avant de chercher le poste dans le parc.
+    """
+    tag = (tag or '').strip()
+    if not tag:
+        return None
+    for e in entites:
+        if (e.get('tag') or '').strip() == tag:
+            return e
+    return None
+
+
 def trouver_client(entites, code):
     """Entite cliente dont le nom porte ce code, ou None."""
     code = (code or '').strip()

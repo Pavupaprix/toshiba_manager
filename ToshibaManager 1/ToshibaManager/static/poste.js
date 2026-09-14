@@ -308,7 +308,7 @@
                 glpiTagOrigine.textContent = 'Lu dans GLPI sur cette sous-entité.';
             } else {
                 glpiTag.value = tagPropose();
-                glpiTagOrigine.textContent = 'Proposé : ce TAG sera enregistré dans GLPI à la création.';
+                glpiTagOrigine.textContent = 'Proposé. Il ne vaudra que si vous créez le client dans GLPI.';
             }
         });
 
@@ -345,14 +345,15 @@
         glpiTag.value = r.tagPropose || '';
         glpiTagOrigine.textContent = r.tagLuDansGlpi
             ? 'Lu dans GLPI sur cette sous-entité.'
-            : 'Proposé : ce TAG sera enregistré dans GLPI à la création.';
+            : 'Proposé. Il ne vaudra que si vous créez le client dans GLPI.';
 
         if (r.trouve) {
             if (r.entite && r.entite.nomClient) glpiNomClient.value = r.entite.nomClient;
             etatGlpi('Client trouvé : ' + (r.entite ? r.entite.nomComplet : ''), 'ok');
         } else {
-            etatGlpi('Client absent de GLPI. Il sera créé sous le nom « '
-                     + (r.nomEntitePrevu || '?') + ' ».', 'absent');
+            etatGlpi('Client absent de GLPI. Cliquez sur « Créer dans GLPI » '
+                     + 'pour créer « ' + (r.nomEntitePrevu || '?') + ' » : '
+                     + 'la génération du ZIP ne le fera pas.', 'absent');
         }
     }
 
