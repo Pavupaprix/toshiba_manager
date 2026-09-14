@@ -99,7 +99,7 @@
             <!-- ============ 2. Applications ============ -->
             <p class="poste-etape">2 — Applications à installer</p>
 
-            <main class="smtp-grid smtp-grid--trois">
+            <main class="smtp-grid poste-grille-apps">
                 {% for categorie in categories %}
                 <section class="smtp-card">
                     <div class="smtp-card-heading">
@@ -290,6 +290,15 @@
                     </div>
 
                     <p class="poste-glpi-etat" id="glpiEtat" hidden></p>
+
+                    <div class="poste-glpi-ranger" id="glpiPostes" hidden>
+                        <p class="poste-glpi-ranger-titre">Postes à ranger</p>
+                        <p><small>Ces postes portent déjà ce TAG mais leur fiche est
+                           restée dans une autre entité : GLPI n'applique ses règles
+                           d'affectation qu'à la création. Transférez-les depuis leur
+                           fiche, avec votre modèle habituel.</small></p>
+                        <ul id="glpiPostesListe"></ul>
+                    </div>
 
                     <label for="glpiSousEntite">Sous-entité</label>
                     <select id="glpiSousEntite">

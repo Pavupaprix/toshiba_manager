@@ -540,6 +540,51 @@ def _saisie_glpi():
     return code, nom_client, sous_entite
 
 
+def _postes_a_ranger(session, entites, tag, sous_entite):
+    """Postes qui portent ce TAG mais dont la fiche est rangee ailleurs.
+
+    GLPI n'applique ses regles d'affectation d'entite qu'a la creation d'une
+    fiche : un poste prepare a l'atelier garde son entite d'origine apres
+    reetiquetage. On se contente de les signaler -- le transfert doit passer
+    par GLPI et son modele, seul a decider du sort des elements lies. Aucune
+    action de masse de transfert n'est d'ailleurs exposee par l'API, verifie
+    sur l'instance.
+    """
+    if not tag or not sous_entite:
+        return []
+
+    attendue = sous_entite.get('id')
+    try:
+        agents = session.appel('GET', 'Agent',
+                               params={'searchText[tag]': tag, 'range': '0-99'})
+    except glpi.ErreurGlpi:
+        return []  # Le signalement est un confort : il ne doit rien faire echouer.
+
+    if isinstance(agents, dict):
+        agents = agents.get('data', [])
+
+    noms = {glpi._entier(e.get('id')): (e.get('completename') or e.get('name') or '')
+            for e in entites}
+    base = glpi.configuration()['serveur'].rstrip('/')
+
+    resultat = []
+    for a in agents:
+        # searchText fait un LIKE : on reverifie l'egalite exacte.
+        if not isinstance(a, dict) or (a.get('tag') or '').strip() != tag:
+            continue
+        actuelle = glpi._entier(a.get('entities_id'))
+        if actuelle == attendue:
+            continue
+        itemtype = a.get('itemtype') or 'Computer'
+        resultat.append({
+            'nom': a.get('name') or '(sans nom)',
+            'entiteActuelle': noms.get(actuelle) or 'entité inconnue',
+            'lien': '%s/front/%s.form.php?id=%s' % (base, itemtype.lower(),
+                                                    a.get('items_id')),
+        })
+    return resultat
+
+
 def _etat_client(session, code, nom_client, sous_entite):
     """Forme unique renvoyee par les deux routes, pour que le navigateur n'ait
     qu'un seul cas a traiter."""
@@ -569,6 +614,7 @@ def _etat_client(session, code, nom_client, sous_entite):
         'sousEntites': enfants,
         'tagPropose': tag,
         'tagLuDansGlpi': bool((choisie or {}).get('tag')),
+        'postesARanger': _postes_a_ranger(session, entites, tag, choisie),
     }
 
 

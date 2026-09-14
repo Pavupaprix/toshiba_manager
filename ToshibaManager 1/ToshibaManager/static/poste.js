@@ -319,7 +319,30 @@
 
     var glpiEntitePrevue = '';
 
+    function afficherPostesARanger(postes) {
+        var bloc = document.getElementById('glpiPostes');
+        var liste = document.getElementById('glpiPostesListe');
+        liste.innerHTML = '';
+        bloc.hidden = !postes || postes.length === 0;
+        if (bloc.hidden) return;
+
+        postes.forEach(function (p) {
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            a.href = p.lien;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = p.nom;
+            var suite = document.createElement('em');
+            suite.textContent = ' — actuellement dans ' + p.entiteActuelle;
+            li.appendChild(a);
+            li.appendChild(suite);
+            liste.appendChild(li);
+        });
+    }
+
     function appliquerReponseGlpi(r) {
+        afficherPostesARanger(r.postesARanger);
         boutonCreer.hidden = !!r.trouve;
         if (r.trouve) glpiEntitePrevue = '';
 

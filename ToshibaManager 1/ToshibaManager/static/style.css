@@ -2217,3 +2217,49 @@ a.btn { text-decoration: none; }
 [data-theme="dark"] .poste-glpi-etat--ok     { background: rgba(16, 185, 129, .10); }
 [data-theme="dark"] .poste-glpi-etat--absent { background: rgba(245, 158, 11, .10); }
 [data-theme="dark"] .poste-glpi-etat--erreur { background: rgba(239, 68, 68, .10); }
+
+/* Les quatre categories d applications tiennent sur une rangee des que la
+   largeur le permet, plutot que trois puis une orpheline. Classe dediee :
+   .smtp-grid--trois sert aussi a la page des copieurs. */
+.poste-grille-apps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+}
+
+/* Quatre colonnes fixes plutot qu'auto-fit : la largeur du conteneur laissait
+   auto-fit choisir trois colonnes larges, et la quatriene categorie tombait
+   seule sur une rangee. */
+@media (max-width: 1000px) {
+    .poste-grille-apps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+    .poste-grille-apps { grid-template-columns: 1fr; }
+}
+
+/* Signalement des postes restes dans une autre entite. */
+.poste-glpi-ranger {
+    margin: 12px 0;
+    padding: 12px 16px;
+    border-left: 3px solid var(--amber);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--warn-soft);
+}
+
+[data-theme="dark"] .poste-glpi-ranger { background: rgba(245, 158, 11, .10); }
+
+.poste-glpi-ranger-titre {
+    margin: 0 0 6px;
+    font-weight: 700;
+    font-size: .9rem;
+    color: var(--ink);
+}
+
+.poste-glpi-ranger ul {
+    margin: 10px 0 0;
+    padding-left: 18px;
+}
+
+.poste-glpi-ranger li { margin: 4px 0; font-size: .88rem; }
+.poste-glpi-ranger a { color: var(--indigo); font-weight: 600; }
+.poste-glpi-ranger em { color: var(--muted-strong); font-style: normal; }
