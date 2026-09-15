@@ -18,13 +18,25 @@ echo ============================
 
 REM Creation de l'utilisateur local Toshiba (ignore si deja cree)
 net user %UserName% >nul 2>&1
-if %errorlevel%==0 goto userExists
+if %errorlevel%==0 goto motDePasse
 net user %UserName% "%Password%" /add /comment:"%UserName%" /fullname:"%UserName%" /logonpasswordchg:no
 if errorlevel 1 goto :echec
-:userExists
+goto :comptePret
+
+:motDePasse
 REM Compte deja present : on applique le mot de passe saisi, sinon le
 REM copieur configure avec celui-ci ne pourrait plus deposer ses scans.
-net user %UserName% "%Password%" >nul
+REM
+REM Le resultat est controle. Sans cela, un refus de la strategie de mots
+REM de passe laisserait l'ancien mot de passe en place pendant que le
+REM copieur serait configure avec le nouveau : le scan echouerait par la
+REM suite en "erreur d'enregistrement fichier", sans que rien ici ne
+REM l'ait annonce. Et pas de redirection vers nul : le message de net.exe
+REM est precisement le diagnostic.
+net user %UserName% "%Password%"
+if errorlevel 1 goto :echecMotDePasse
+
+:comptePret
 echo Utilisateur %UserName% pret.
 
 REM Le mot de passe ne doit pas expirer
@@ -78,3 +90,15 @@ echo.
 echo ERREUR : la configuration a echoue.
 echo Verifiez que le script est lance en Administrateur.
 pause
+exit /b 1
+
+:echecMotDePasse
+echo.
+echo ERREUR : le mot de passe n'a pas pu etre applique au compte %UserName%.
+echo Le compte conserve son ancien mot de passe, et le partage n'a pas ete
+echo modifie. Le message de Windows ci-dessus en donne la raison ; la plus
+echo frequente est une strategie de mots de passe non respectee (longueur
+echo ou complexite).
+echo Relancez le script avec un autre mot de passe.
+pause
+exit /b 1
