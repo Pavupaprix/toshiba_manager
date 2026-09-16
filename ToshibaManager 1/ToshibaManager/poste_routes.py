@@ -279,6 +279,24 @@ def construire_config():
                 "directement le mot de passe d'accès sans surveillance.")
         anydesk = {'motDePasse': mot_de_passe}
 
+    # Microsoft 365 : l'edition decide du Product ID passe a l'outil de
+    # deploiement Office. Se tromper installe un Office qui ne s'activera
+    # jamais sous la licence du client, d'ou la liste fermee -- et le repli sur
+    # Business, l'edition des TPE et PME, plutot que sur la premiere venue.
+    office = None
+    if 'office365' in choisies:
+        app_office = par_id['office365']
+        editions = [e['id'] for e in app_office.get('editions', [])]
+        edition = _texte('officeEdition', 40) or (editions[0] if editions else '')
+        if editions and edition not in editions:
+            raise ErreurFormulaire('Édition Microsoft 365 inconnue : ' + edition)
+        office = {
+            'edition': edition,
+            'exclusions': app_office.get('exclusions', []),
+            'langue': app_office.get('langue', 'fr-fr'),
+            'canal': app_office.get('canal', 'Current'),
+        }
+
     renommer = _coche('renommerPoste')
     # Volontairement pas tronque a 15 : un nom trop long doit etre refuse, pas
     # raccourci en silence. Le poste porterait sinon un autre nom que celui lu
@@ -394,6 +412,7 @@ def construire_config():
         'poste': {'renommer': renommer, 'nom': nom_poste},
         'applications': entete + applications,
         'anydesk': anydesk,
+        'office': office,
         'navigateurParDefaut': navigateur,
         'windows': windows,
         'glpi': bloc_glpi,

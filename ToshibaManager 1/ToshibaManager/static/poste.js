@@ -25,6 +25,7 @@
     var champAnyDesk = document.getElementById('anydeskMotDePasse');
     var blocAnyDesk = document.getElementById('blocAnyDesk');
     var blocChrome = document.getElementById('blocChrome');
+    var blocOffice = document.getElementById('blocOffice');
     var avertPdf = document.getElementById('avertPdf');
     var avertUac = document.getElementById('avertUac');
     var champUac = document.getElementById('uac');
@@ -105,6 +106,12 @@
         blocChrome.hidden = !coche;
     }
 
+    function majOffice() {
+        if (!blocOffice) return;
+        var coche = caseApp('office365') && caseApp('office365').checked;
+        blocOffice.hidden = !coche;
+    }
+
     function majPdf() {
         var acrobat = caseApp('acrobat'), foxit = caseApp('foxit');
         avertPdf.hidden = !(acrobat && foxit && acrobat.checked && foxit.checked);
@@ -116,7 +123,7 @@
 
     Array.prototype.forEach.call(document.querySelectorAll('input[name="app"]'), function (c) {
         c.addEventListener('change', function () {
-            majAnyDesk(); majChrome(); majPdf(); majBoutonsTout(); majGlpi();
+            majAnyDesk(); majChrome(); majOffice(); majPdf(); majBoutonsTout(); majGlpi();
         });
     });
 
@@ -542,6 +549,7 @@
         majNomPoste();
         majAnyDesk();
         majChrome();
+        majOffice();
         majPdf();
         majBoutonsTout();
     }
@@ -650,6 +658,7 @@
     majNomPoste();
     majAnyDesk();
     majChrome();
+    majOffice();
     majPdf();
     majBoutonsTout();
     majGlpi();

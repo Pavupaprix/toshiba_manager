@@ -45,7 +45,7 @@ if (-not (Test-Path $FichierConfig)) {
     exit 1
 }
 
-foreach ($module in 'Journal', 'Winget', 'Outils', 'AgentGlpi', 'Comptes', 'AnyDesk', 'Navigateur', 'Windows') {
+foreach ($module in 'Journal', 'Winget', 'Outils', 'AgentGlpi', 'Office', 'Comptes', 'AnyDesk', 'Navigateur', 'Windows') {
     . (Join-Path $Racine "lib\$module.ps1")
 }
 
@@ -151,10 +151,24 @@ if ($viaOutil.Count -gt 0) {
         $index++
         Ecrire ''
         Ecrire ('[{0}/{1}] {2}' -f $index, $viaOutil.Count, $app.nom) 'Cyan'
+
+        # Meme traitement des metadonnees du catalogue que dans la boucle
+        # winget : elles decrivent l'application, pas sa provenance.
+        if ($app.siAbsent -eq 'office' -and (Test-OfficePresent)) {
+            Ecrire '  Office deja present : installation ignoree.' 'Green'
+            Add-Resultat $app.nom 'Deja present' $app.fichier
+            continue
+        }
+        if ($app.avertissement) { Ecrire ('  ' + $app.avertissement) 'Yellow' }
+
         # L'agent GLPI a son propre traitement : un poste prepare a l'atelier
         # l'a deja, et msiexec /i par-dessus une installation existante echoue.
         if ($app.id -eq 'glpiagent') {
             $statut = Install-AgentGlpi -App $app -BaseUrl $config.baseUrl -Travail $Travail
+        } elseif ($app.type -eq 'office') {
+            # Office n'est pas un installeur mais un lanceur pilote par un XML.
+            $statut = Install-Office -App $app -Office $config.office `
+                                     -BaseUrl $config.baseUrl -Travail $Travail
         } else {
             $statut = Install-Outil -App $app -BaseUrl $config.baseUrl -Travail $Travail
         }

@@ -1,10 +1,26 @@
 {
   "_commentaire": "Catalogue des applications proposees sur /poste. Lu par poste_routes.py pour construire la page et valider le formulaire, et embarque tel quel dans le ZIP pour que le script PowerShell installe exactement ce qui a ete coche. source=winget -> installe par winget avec wingetId. source=outil -> binaire hebergé sur le serveur (dossier OUTILS_DIR), telecharge par le poste puis lance selon 'type'.",
   "categories": [
-    { "id": "bureautique", "nom": "Bureautique", "icone": "📄" },
-    { "id": "multimedia",  "nom": "Multimédia & web", "icone": "🌐" },
-    { "id": "distant",     "nom": "Accès à distance", "icone": "🖥️" },
-    { "id": "depannage",   "nom": "Analyse & dépannage", "icone": "🧪" }
+    {
+      "id": "bureautique",
+      "nom": "Bureautique",
+      "icone": "📄"
+    },
+    {
+      "id": "multimedia",
+      "nom": "Multimédia & web",
+      "icone": "🌐"
+    },
+    {
+      "id": "distant",
+      "nom": "Accès à distance",
+      "icone": "🖥️"
+    },
+    {
+      "id": "depannage",
+      "nom": "Analyse & dépannage",
+      "icone": "🧪"
+    }
   ],
   "applications": [
     {
@@ -31,18 +47,41 @@
       "source": "winget",
       "wingetId": "TheDocumentFoundation.LibreOffice",
       "skipDeps": true,
-      "prerequis": ["vcredist"]
+      "prerequis": [
+        "vcredist"
+      ]
     },
     {
       "id": "office365",
       "nom": "Microsoft 365",
-      "description": "Installé uniquement si aucune version d'Office n'est détectée sur le poste. Compter 15 à 30 minutes.",
+      "description": "Installe uniquement si aucune version d'Office n'est detectee sur le poste. Compter 15 a 30 minutes.",
       "categorie": "bureautique",
-      "source": "winget",
-      "wingetId": "Microsoft.Office",
+      "source": "outil",
+      "fichier": "setup-office.exe",
+      "type": "office",
+      "sha256": "",
       "siAbsent": "office",
       "lent": true,
-      "avertissement": "Office telecharge plusieurs Go depuis les serveurs Microsoft et n'affiche rien pendant ce temps. Comptez 15 a 30 minutes selon la connexion."
+      "avertissement": "Office telecharge plusieurs Go depuis les serveurs Microsoft et n'affiche rien pendant ce temps. Comptez 15 a 30 minutes selon la connexion.",
+      "editions": [
+        {
+          "id": "O365BusinessRetail",
+          "nom": "Microsoft 365 Business (Basic, Standard, Premium)"
+        },
+        {
+          "id": "O365ProPlusRetail",
+          "nom": "Microsoft 365 Apps for enterprise (E3, E5)"
+        }
+      ],
+      "exclusions": [
+        "Groove",
+        "Lync",
+        "Access",
+        "Publisher",
+        "OneNote"
+      ],
+      "langue": "fr-fr",
+      "canal": "Current"
     },
     {
       "id": "sevenzip",

@@ -129,6 +129,21 @@
                     </div>
                     {% endif %}
 
+                    {% if app.id == 'office365' %}
+                    <div class="poste-sous-option" id="blocOffice" hidden>
+                        <label for="officeEdition">Édition selon la licence du client</label>
+                        <select id="officeEdition" name="officeEdition">
+                            {% for edition in app.editions %}
+                            <option value="{{ edition.id }}">{{ edition.nom }}</option>
+                            {% endfor %}
+                        </select>
+                        <p><small>Installer la mauvaise édition donne un Office qui
+                           s'installe mais ne s'active jamais.
+                           {% if app.exclusions %}Non installés :
+                           {{ app.exclusions | join(', ') }}.{% endif %}</small></p>
+                    </div>
+                    {% endif %}
+
                     {% if app.id == 'anydesk' %}
                     <div class="poste-sous-option" id="blocAnyDesk" hidden>
                         <label for="anydeskMotDePasse">Mot de passe d'accès sans surveillance</label>
