@@ -12,6 +12,78 @@
     lance.
 #>
 
+# Windows Installer refuse de mener deux transactions de front : le second
+# msiexec sort aussitot en 1618, sans rien tenter. winget remonte le meme
+# incident sous son propre code.
+$script:MSI_DEJA_EN_COURS = 1618
+$script:WINGET_DEJA_EN_COURS = -1978334974
+
+function Test-InstallateurMsiOccupe {
+    <#
+        Vrai si une transaction Windows Installer est en cours ailleurs.
+
+        Windows Installer protege ses transactions par un mutex global unique.
+        Le consulter est le seul moyen de distinguer "ce paquet est mauvais" de
+        "ce n'est pas le moment" -- deux situations que le code 1618 ne separe
+        pas, et qui n'appellent pas la meme reaction.
+    #>
+    $mutex = $null
+    try {
+        $mutex = [System.Threading.Mutex]::OpenExisting('Global\_MSIExecute')
+    } catch [System.Threading.WaitHandleCannotBeOpenedException] {
+        return $false   # le mutex n'existe meme pas : rien en cours
+    } catch {
+        return $true    # present mais hors de portee : on suppose occupe
+    }
+
+    try {
+        if ($mutex.WaitOne(0, $false)) {
+            $mutex.ReleaseMutex()
+            return $false
+        }
+        return $true
+    } finally {
+        $mutex.Dispose()
+    }
+}
+
+function Wait-InstallateurMsi {
+    <#
+        Attend que Windows Installer se libere, au plus $Minutes.
+
+        Sur un poste neuf, Windows Update et le Microsoft Store installent en
+        arriere-plan des les premieres minutes : c'est la situation ordinaire,
+        pas l'exception. Une installation lancee a cet instant echoue en 1618,
+        et le poste repart avec une application en moins sans que personne ne
+        sache pourquoi -- releve en clientele sur VLC et sur l'agent GLPI, dans
+        la meme execution.
+
+        Au dela du delai on tente quand meme : mieux vaut un echec explicite
+        qu'une attente sans fin.
+    #>
+    param([int]$Minutes = 10)
+
+    if (-not (Test-InstallateurMsiOccupe)) { return $true }
+
+    Ecrire '  Une autre installation Windows est en cours, attente...' 'Yellow'
+    $debut = Get-Date
+    while (Test-InstallateurMsiOccupe) {
+        if (((Get-Date) - $debut).TotalMinutes -ge $Minutes) {
+            Write-Host "`r                                                        " -NoNewline
+            Write-Host ''
+            Ecrire ('  Toujours occupee apres {0} minutes : on tente malgre tout.' -f $Minutes) 'Yellow'
+            return $false
+        }
+        Start-Sleep -Seconds 5
+        Write-Host ("`r    attente depuis {0:mm\:ss}    " -f ((Get-Date) - $debut)) `
+                   -NoNewline -ForegroundColor DarkGray
+    }
+    Write-Host "`r                                                        " -NoNewline
+    Write-Host ''
+    Ecrire '  Windows Installer est libre.' 'Green'
+    return $true
+}
+
 function Remove-Dossier {
     <#
         Supprime un dossier et tout son contenu, sans jamais rien afficher.
@@ -92,6 +164,10 @@ function Install-Outil {
         return 'Echec (telechargement)'
     }
 
+    # Attendre avant de lancer plutot que d'echouer puis reessayer : le
+    # telechargement vient d'avoir lieu, on ne le refera pas pour rien.
+    Wait-InstallateurMsi | Out-Null
+
     Ecrire '  Installation en cours...'
     $journalMsi = $null
 
@@ -133,6 +209,17 @@ function Install-Outil {
                 $proc = Start-Process -FilePath 'msiexec.exe' -Wait -PassThru -ErrorAction Stop `
                             -ArgumentList $arguments
                 $code = $proc.ExitCode
+
+                # Une transaction a pu demarrer entre l'attente et le lancement.
+                # Le paquet n'est pas en cause : on attend et on refait un essai,
+                # plutot que de renvoyer un echec qui obligerait a tout relancer.
+                if ($code -eq $script:MSI_DEJA_EN_COURS) {
+                    Ecrire '  Windows Installer etait occupe, nouvel essai...' 'Yellow'
+                    Wait-InstallateurMsi | Out-Null
+                    $proc = Start-Process -FilePath 'msiexec.exe' -Wait -PassThru -ErrorAction Stop `
+                                -ArgumentList $arguments
+                    $code = $proc.ExitCode
+                }
             }
             'exe' {
                 $arguments = @()
