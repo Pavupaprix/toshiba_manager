@@ -341,9 +341,51 @@
         });
     }
 
+    function lancerVerification() {
+        etatGlpi('Interrogation de GLPI…', '');
+        appelGlpi('/poste/glpi/verifier', {
+            code: glpiCode.value.trim(),
+            nomClient: glpiNomClient.value.trim(),
+            sousEntite: sousEntiteChoisie()
+        }).then(appliquerReponseGlpi)
+          .catch(function (e) { etatGlpi(e.message, 'erreur'); });
+    }
+
+    function afficherSuggestions(suggestions) {
+        var bloc = document.getElementById('glpiSuggestions');
+        var liste = document.getElementById('glpiSuggestionsListe');
+        liste.innerHTML = '';
+        bloc.hidden = !suggestions || suggestions.length === 0;
+        if (bloc.hidden) return;
+
+        suggestions.forEach(function (s) {
+            var li = document.createElement('li');
+            var bouton = document.createElement('button');
+            bouton.type = 'button';
+            bouton.className = 'poste-glpi-suggestion';
+            bouton.textContent = s.nomComplet || s.nom;
+            // Reprendre la graphie de GLPI, pas celle qui a ete tapee : c'est
+            // elle qui doit servir a la suite, sinon le TAG et l'entite
+            // retenus ne seraient pas ceux du parc.
+            bouton.addEventListener('click', function () {
+                glpiNomClient.value = s.nomClient || s.nom || '';
+                glpiCode.value = s.code || '';
+                glpiNomModifie = true;
+                glpiCodeModifie = true;
+                lancerVerification();
+            });
+            li.appendChild(bouton);
+            liste.appendChild(li);
+        });
+    }
+
     function appliquerReponseGlpi(r) {
         afficherPostesARanger(r.postesARanger);
-        boutonCreer.hidden = !!r.trouve;
+        afficherSuggestions(r.suggestions);
+        // Creer reste ferme tant que le serveur n'a pas confirme que les deux
+        // valeurs necessaires sont la : une recherche par nom seul ne doit pas
+        // ouvrir une ecriture dans le parc.
+        boutonCreer.hidden = !!r.trouve || r.creationPossible === false;
         if (r.trouve) glpiEntitePrevue = '';
 
         // La liste des sous-entites vient de GLPI ; chacune porte son TAG.
@@ -374,8 +416,26 @@
             : 'Proposé. Il ne vaudra que si vous créez le client dans GLPI.';
 
         if (r.trouve) {
-            if (r.entite && r.entite.nomClient) glpiNomClient.value = r.entite.nomClient;
+            // La graphie de GLPI fait autorité : un 51688 saisi pour un client
+            // enregistré « TSEIN - 051688 » devient 051688 dans le formulaire.
+            // Sans cette reprise, la génération repartirait du code tapé.
+            if (r.entite && r.entite.nomClient) {
+                glpiNomClient.value = r.entite.nomClient;
+                glpiNomModifie = true;
+            }
+            if (r.entite && r.entite.code) {
+                glpiCode.value = r.entite.code;
+                glpiCodeModifie = true;
+            }
             etatGlpi('Client trouvé : ' + (r.entite ? r.entite.nomComplet : ''), 'ok');
+        } else if (r.suggestions && r.suggestions.length) {
+            glpiEntitePrevue = r.nomEntitePrevu || '';
+            etatGlpi('Aucune correspondance exacte. Choisissez un client ci-dessous, '
+                     + 'ou précisez votre saisie.', 'absent');
+        } else if (r.creationPossible === false) {
+            glpiEntitePrevue = '';
+            etatGlpi('Aucun client ne correspond. Pour en créer un, renseignez le nom '
+                     + 'et un code de 4 à 6 chiffres.', 'absent');
         } else {
             glpiEntitePrevue = r.nomEntitePrevu || '';
             etatGlpi('Client absent de GLPI. Il sera créé sous le nom « '
@@ -400,15 +460,7 @@
     }
 
     if (boutonVerifier) {
-        boutonVerifier.addEventListener('click', function () {
-            etatGlpi('Interrogation de GLPI…', '');
-            appelGlpi('/poste/glpi/verifier', {
-                code: glpiCode.value.trim(),
-                nomClient: glpiNomClient.value.trim(),
-                sousEntite: sousEntiteChoisie()
-            }).then(appliquerReponseGlpi)
-              .catch(function (e) { etatGlpi(e.message, 'erreur'); });
-        });
+        boutonVerifier.addEventListener('click', lancerVerification);
 
         boutonCreer.addEventListener('click', function () {
             etatGlpi('Création dans GLPI…', '');

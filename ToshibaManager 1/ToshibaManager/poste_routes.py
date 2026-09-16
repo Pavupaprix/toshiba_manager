@@ -94,6 +94,10 @@ APP_GLPI = 'glpiagent'
 # guillemet a l'interieur casserait la citation et tronquerait la valeur.
 RE_TAG = re.compile(r'^[^"\x00-\x1f]{1,60}$')
 
+# Code partiel accepte par la recherche, ou l'on peut ne taper que le debut.
+# La creation d'entite, elle, continue d'exiger un code complet (RE_CODE).
+RE_CODE_RECHERCHE = re.compile(r'^[0-9]{1,6}$')
+
 
 class ErreurFormulaire(ValueError):
     """Saisie invalide : le message est affichable tel quel au technicien."""
@@ -528,15 +532,29 @@ def telecharger_zip():
 # et ecrivent dans le parc GLPI de production. Seule /poste/outils est ouverte.
 
 
-def _saisie_glpi():
-    """Lit et valide le couple nom de client / code client."""
+def _saisie_glpi(code_complet=True):
+    """Lit et valide le couple nom de client / code client.
+
+    Deux exigences selon l'usage. La creation d'entite reclame un code complet,
+    puisqu'il entre dans le nom de l'entite et qu'un code tronque y resterait.
+    La recherche, elle, accepte l'un ou l'autre des deux champs : on ne connait
+    pas toujours le code, et il arrive qu'il soit note autrement dans GLPI --
+    « TSEIN - 051688 » ne se trouve pas en tapant 51688.
+    """
     donnees = request.get_json(silent=True) or {}
     code = str(donnees.get('code', '')).strip()
     nom_client = str(donnees.get('nomClient', '')).strip()[:80]
     sous_entite = str(donnees.get('sousEntite', '')).strip()[:60]
 
-    if not glpi.RE_CODE.match(code):
-        raise ErreurFormulaire('Code client invalide : 4 à 6 chiffres attendus.')
+    if code_complet:
+        if not glpi.RE_CODE.match(code):
+            raise ErreurFormulaire('Code client invalide : 4 à 6 chiffres attendus.')
+    else:
+        if code and not RE_CODE_RECHERCHE.match(code):
+            raise ErreurFormulaire('Code client invalide : des chiffres uniquement, '
+                                   '6 au plus.')
+        if not code and not nom_client:
+            raise ErreurFormulaire('Renseignez un nom de client, un code, ou les deux.')
     return code, nom_client, sous_entite
 
 
@@ -592,9 +610,18 @@ def _etat_client(session, code, nom_client, sous_entite):
     client = glpi.trouver_client(entites, code)
 
     if not client:
+        # Rien d'exact : on montre ce qui ressemble plutot que d'annoncer un
+        # client absent et de proposer d'en creer un doublon.
+        suggestions = [glpi.resume_entite(e)
+                       for e in glpi.chercher_clients(entites, code, nom_client)]
+        # Creer reclame les deux valeurs, et un code complet : une recherche
+        # par nom seul, ou par code partiel, ne doit pas ouvrir l'ecriture.
+        creation_possible = bool(nom_client) and bool(glpi.RE_CODE.match(code or ''))
         return {
             'trouve': False,
-            'nomEntitePrevu': glpi.nom_entite(nom_client, code) if nom_client else '',
+            'suggestions': suggestions,
+            'creationPossible': creation_possible,
+            'nomEntitePrevu': glpi.nom_entite(nom_client, code) if creation_possible else '',
             'sousEntites': [],
             'tagPropose': glpi.tag_propose(nom_client, sous_entite or 'Ordinateurs'),
         }
@@ -624,7 +651,7 @@ def glpi_verifier():
     if not glpi.est_configure():
         return jsonify({'error': "GLPI n'est pas configuré sur le serveur."}), 503
     try:
-        code, nom_client, sous_entite = _saisie_glpi()
+        code, nom_client, sous_entite = _saisie_glpi(code_complet=False)
         with glpi.Session() as session:
             return jsonify(_etat_client(session, code, nom_client, sous_entite))
     except ErreurFormulaire as e:

@@ -2274,3 +2274,54 @@ a.btn { text-decoration: none; }
 .poste-glpi-ranger li { margin: 4px 0; font-size: .88rem; }
 .poste-glpi-ranger a { color: var(--indigo); font-weight: 600; }
 .poste-glpi-ranger em { color: var(--muted-strong); font-style: normal; }
+
+/* Clients approchants proposes quand la recherche GLPI ne trouve rien
+   d'exact. Bleu et non ambre : ce n'est pas un avertissement, c'est une
+   proposition sur laquelle on clique -- l'ambre est reserve aux postes a
+   ranger, juste en dessous, et deux encadres de la meme couleur se
+   liraient comme un seul. */
+.poste-glpi-suggestions {
+    margin: 12px 0;
+    padding: 12px 16px;
+    border-left: 3px solid var(--indigo);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--indigo-soft);
+}
+
+[data-theme="dark"] .poste-glpi-suggestions { background: rgba(99, 102, 241, .12); }
+
+.poste-glpi-suggestions-titre {
+    margin: 0 0 6px;
+    font-weight: 700;
+    font-size: .9rem;
+    color: var(--ink);
+}
+
+.poste-glpi-suggestions ul {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.poste-glpi-suggestion {
+    width: 100%;
+    text-align: left;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--indigo);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.poste-glpi-suggestion:hover,
+.poste-glpi-suggestion:focus-visible {
+    border-color: var(--indigo);
+    background: var(--surface);
+}

@@ -20,6 +20,7 @@ import json
 import os
 import re
 import ssl
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -249,14 +250,116 @@ def entite_du_tag(entites, tag):
     return None
 
 
+def normaliser_code(code):
+    """« 051688 » et « 51688 » designent le meme client.
+
+    Le parc melange les deux graphies : l'entite « TSEIN - 051688 » porte un
+    zero de tete que personne ne tape. Comparer les codes debarrasses de leurs
+    zeros de tete evite le pire des cas -- ne pas reconnaitre un client qui
+    existe, et lui creer un doublon a cote.
+    """
+    chiffres = ''.join(c for c in (code or '') if c.isdigit())
+    return chiffres.lstrip('0') or chiffres
+
+
+def normaliser_texte(texte):
+    """Minuscules, sans accents, ponctuation ramenee a des espaces.
+
+    Pour comparer un nom saisi a la main a ceux du parc, ou ni la casse ni les
+    accents ne sont homogenes. Sert aussi de cle de tri des resultats.
+    """
+    decompose = unicodedata.normalize('NFD', (texte or '').strip())
+    lisible = ''.join(c if (c.isalnum() or c.isspace()) else ' '
+                      for c in decompose
+                      if unicodedata.category(c) != 'Mn')
+    return ' '.join(lisible.lower().split())
+
+
+def comparable(texte):
+    """Forme compactee, sans separateur, pour la recherche « contient ».
+
+    « SAINT-MARTIN » et « saint martin » designent le meme client : sans cette
+    reduction, le trait d'union suffit a ce que la recherche ne trouve rien.
+    """
+    return normaliser_texte(texte).replace(' ', '')
+
+
+def est_client(e):
+    """Entite cliente : un enfant direct de la racine.
+
+    Se fonde sur la place dans l'arborescence et non sur le nom : un client
+    dont le nom ne suivrait pas la convention reste un client.
+    """
+    return (_entier(e.get('entities_id')) == ENTITE_RACINE
+            and _entier(e.get('id')) != ENTITE_RACINE)
+
+
 def trouver_client(entites, code):
-    """Entite cliente dont le nom porte ce code, ou None."""
+    """Entite cliente portant ce code, ou None.
+
+    Deux passes. La correspondance exacte d'abord. Puis, a defaut, la
+    comparaison des codes normalises, qui rattrape les zeros de tete.
+
+    Cette seconde passe ne tranche que si elle ne ramene qu'un seul client :
+    deux entites dont les codes ne different que par un zero de tete sont une
+    ambiguite reelle du parc, et c'est au technicien de la lever -- la liste
+    de suggestions les lui montrera toutes les deux.
+    """
     code = (code or '').strip()
+    if not code:
+        return None
+
+    approchants = []
     for e in entites:
         _, trouve = decouper_nom_client(_dernier_segment(e.get('completename') or e.get('name')))
-        if trouve and trouve == code:
+        if not trouve:
+            continue
+        if trouve == code:
             return e
-    return None
+        if normaliser_code(trouve) == normaliser_code(code):
+            approchants.append(e)
+    return approchants[0] if len(approchants) == 1 else None
+
+
+def chercher_clients(entites, code='', nom='', limite=12):
+    """Clients dont le code ou le nom *contient* ce qui a ete saisi.
+
+    Repli quand aucune correspondance exacte ne sort. Annoncer « client
+    absent » et proposer d'en creer un est trompeur quand le client existe
+    sous une graphie voisine : mieux vaut montrer ce qui ressemble et laisser
+    choisir.
+
+    Les deux champs remplis se croisent (et), parce que deux criteres servent
+    a restreindre. Si le croisement ne donne rien, on elargit a l'un ou
+    l'autre (ou) : un nom mal orthographie ne doit pas masquer un code juste.
+    """
+    code_cherche = normaliser_code(code)
+    # Chaque mot saisi doit se retrouver, et non la suite entiere d'un bloc :
+    # « creche lilas » doit sortir « CRECHE DES LILAS », que l'on ne va pas
+    # taper en entier.
+    mots_cherches = normaliser_texte(nom).split()
+    if not code_cherche and not mots_cherches:
+        return []
+
+    def criteres(e):
+        segment = _dernier_segment(e.get('completename') or e.get('name'))
+        nom_e, code_e = decouper_nom_client(segment)
+        cible = comparable(nom_e or segment)
+        par_code = bool(code_cherche) and code_cherche in normaliser_code(code_e)
+        par_nom = bool(mots_cherches) and all(m in cible for m in mots_cherches)
+        return par_code, par_nom
+
+    clients = [e for e in entites if est_client(e)]
+
+    resultats = []
+    if code_cherche and mots_cherches:
+        resultats = [e for e in clients if all(criteres(e))]
+    if not resultats:
+        resultats = [e for e in clients if any(criteres(e))]
+
+    resultats.sort(key=lambda e: normaliser_texte(
+        _dernier_segment(e.get('completename') or e.get('name'))))
+    return resultats[:limite]
 
 
 def sous_entites(entites, client):
