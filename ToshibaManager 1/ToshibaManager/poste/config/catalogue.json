@@ -59,7 +59,7 @@
       "source": "outil",
       "fichier": "setup-office.exe",
       "type": "office",
-      "sha256": "",
+      "sha256": "50FACF295F357D8230B4D50678536148E32F34B4AC33387269D5A72C93FF810A",
       "siAbsent": "office",
       "lent": true,
       "avertissement": "Office telecharge plusieurs Go depuis les serveurs Microsoft et n'affiche rien pendant ce temps. Comptez 15 a 30 minutes selon la connexion.",
