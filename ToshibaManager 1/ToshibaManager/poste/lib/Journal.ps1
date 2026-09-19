@@ -13,6 +13,50 @@ $script:Secrets = New-Object System.Collections.Generic.List[string]
 $script:JournalFichier = $null
 $script:Resultats = New-Object System.Collections.Generic.List[psobject]
 
+function Disable-SelectionRapide {
+    <#
+        Desactive le mode "selection rapide" de la console.
+
+        Un clic dans la fenetre -- meme celui qui la met simplement au premier
+        plan -- y fait passer Windows en mode selection. Le processus se bloque
+        alors des sa premiere ecriture sur la sortie, et rien ne l'annonce : la
+        console parait figee. Une frappe la libere et tout s'affiche d'un coup.
+
+        Sur une installation qui dure vingt minutes, ce gel passe pour un
+        plantage et le technicien coupe -- releve pendant les essais sur VM. Le
+        confort de selectionner du texte a la souris ne vaut pas ce risque ; la
+        selection reste accessible par le menu de la fenetre.
+    #>
+    $signature = @'
+[DllImport("kernel32.dll", SetLastError = true)]
+public static extern IntPtr GetStdHandle(int nStdHandle);
+[DllImport("kernel32.dll", SetLastError = true)]
+public static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+[DllImport("kernel32.dll", SetLastError = true)]
+public static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+'@
+
+    # Sans console reelle -- sortie redirigee, ISE, execution automatisee --
+    # il n'y a rien a desactiver, et l'echec est alors sans consequence.
+    try {
+        $api = Add-Type -MemberDefinition $signature -Name 'ConsoleOmb' `
+                        -Namespace 'Omb' -PassThru -ErrorAction Stop
+        $entree = $api::GetStdHandle(-10)   # STD_INPUT_HANDLE
+        $mode = [uint32]0
+        if (-not $api::GetConsoleMode($entree, [ref]$mode)) { return }
+
+        $SELECTION_RAPIDE = [uint32]0x0040
+        # ENABLE_EXTENDED_FLAGS doit accompagner tout changement de ce bit,
+        # sinon Windows ignore purement et simplement la demande.
+        $DRAPEAUX_ETENDUS = [uint32]0x0080
+
+        $nouveau = ($mode -band (-bnot $SELECTION_RAPIDE)) -bor $DRAPEAUX_ETENDUS
+        $api::SetConsoleMode($entree, $nouveau) | Out-Null
+    } catch {
+        return
+    }
+}
+
 function Initialize-Journal {
     $dossier = Join-Path $env:ProgramData 'OMB\InstallationPoste'
     New-Item -ItemType Directory -Path $dossier -Force -ErrorAction SilentlyContinue | Out-Null

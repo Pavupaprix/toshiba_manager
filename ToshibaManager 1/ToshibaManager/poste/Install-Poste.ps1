@@ -49,6 +49,10 @@ foreach ($module in 'Journal', 'Winget', 'Outils', 'AgentGlpi', 'Office', 'Compt
     . (Join-Path $Racine "lib\$module.ps1")
 }
 
+# Avant tout affichage : un clic dans la console figerait l'execution sans
+# rien annoncer, et une installation longue passerait pour un plantage.
+Disable-SelectionRapide
+
 try {
     $config = Get-Content -Path $FichierConfig -Raw -Encoding UTF8 | ConvertFrom-Json
 } catch {
