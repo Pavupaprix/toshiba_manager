@@ -200,8 +200,10 @@
         ligne.querySelector('.c-mdp').addEventListener('input', function () {
             ligne.dataset.derive = '';
         });
+        ligne.querySelector('.c-nom').addEventListener('input', majCaseAdminOmb);
         ligne.querySelector('.c-suppr').addEventListener('click', function () {
             ligne.remove();
+            majCaseAdminOmb();
         });
         // Windows n'accepte qu'une seule ouverture de session automatique.
         ligne.querySelector('.c-auto').addEventListener('change', function () {
@@ -213,6 +215,46 @@
 
         listeComptes.appendChild(ligne);
         return ligne;
+    }
+
+    // -------------------------
+    // Session admin OMB
+    // -------------------------
+    // La case n'a pas d'etat propre : elle reflete la presence d'une ligne
+    // nommee adminomb. Un compte supprime a la main, renomme, ou restaure
+    // depuis un export la remet donc d'accord avec ce qui est affiche, sans
+    // qu'aucun drapeau cache ne puisse diverger.
+    var NOM_ADMIN_OMB = 'adminomb';
+    var caseAdminOmb = document.getElementById('sessionAdminOmb');
+
+    function lignesAdminOmb() {
+        return Array.prototype.filter.call(
+            listeComptes.querySelectorAll('.poste-compte'), function (l) {
+                return l.querySelector('.c-nom').value.trim().toLowerCase() === NOM_ADMIN_OMB;
+            });
+    }
+
+    function majCaseAdminOmb() {
+        if (caseAdminOmb) caseAdminOmb.checked = lignesAdminOmb().length > 0;
+    }
+
+    if (caseAdminOmb) {
+        caseAdminOmb.addEventListener('change', function () {
+            if (caseAdminOmb.checked) {
+                if (lignesAdminOmb().length === 0) {
+                    // derive : le mot de passe suit le code client tant que le
+                    // technicien n'y touche pas, comme pour AnyDesk.
+                    ajouterCompte({
+                        nom: NOM_ADMIN_OMB,
+                        motDePasse: motDePasseDerive(),
+                        admin: true,
+                        derive: true
+                    });
+                }
+            } else {
+                lignesAdminOmb().forEach(function (l) { l.remove(); });
+            }
+        });
     }
 
     function majMotsDePasseDerives() {
@@ -540,6 +582,7 @@
 
         listeComptes.innerHTML = '';
         (r.comptes || []).forEach(ajouterCompte);
+        majCaseAdminOmb();
 
         anydeskModifie = r.anydeskMotDePasse !== null && r.anydeskMotDePasse !== undefined;
         if (anydeskModifie) champAnyDesk.value = r.anydeskMotDePasse;
