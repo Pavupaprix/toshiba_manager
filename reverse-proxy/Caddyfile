@@ -10,14 +10,19 @@
 #                              `docker run --rm caddy:2-alpine caddy hash-password`)
 
 {$DOMAIN} {
-	# Le script d'installation des copieurs est telecharge par un .bat qui
-	# tourne sur le poste client, sans session ni identifiants : ces chemins
-	# doivent rester accessibles sans authentification.
+	# Trois chemins, et trois seulement, restent ouverts : ce sont ceux que le
+	# poste du client telecharge lui-meme, depuis un script qui tourne chez lui
+	# sans session ni identifiants.
 	#
-	# /poste/outils/* sert les installeurs (Kudu, CrystalDiskInfo...) au poste
-	# client, lui aussi sans session. Seuls ces binaires sont ouverts : la page
-	# /poste reste protegee, c'est elle qui emet les mots de passe.
-	@protege not path /installer /installer/* /poste/outils/*
+	#   /installer/toolkit.zip   le toolkit PowerShell du .bat copieur
+	#   /installer/drivers/*     l'archive du pilote retenu
+	#   /poste/outils/*          les installeurs OMB (Kudu, agent GLPI, Office...)
+	#
+	# Les pages reste protegees, /installer comme /poste : ce sont elles qui
+	# emettent les mots de passe, et /poste/glpi/creer ecrit dans le parc GLPI.
+	# Ouvrir /installer/* en entier, comme c'etait le cas, laissait la page de
+	# generation accessible a tout venant.
+	@protege not path /installer/toolkit.zip /installer/drivers/* /poste/outils/*
 
 	basic_auth @protege {
 		{$BASIC_AUTH_USER} {$BASIC_AUTH_PASSWORD_HASH}
