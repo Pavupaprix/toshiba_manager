@@ -197,8 +197,11 @@
         ligne.querySelector('.c-auto').checked = !!valeurs.autologon;
         ligne.dataset.derive = valeurs.derive ? '1' : '';
 
+        majPlaceholderMdp(ligne);
+
         ligne.querySelector('.c-mdp').addEventListener('input', function () {
             ligne.dataset.derive = '';
+            majPlaceholderMdp(ligne);
         });
         ligne.querySelector('.c-nom').addEventListener('input', majCaseAdminOmb);
         ligne.querySelector('.c-suppr').addEventListener('click', function () {
@@ -257,9 +260,20 @@
         });
     }
 
+    // Une ligne derivee dont le code client n'est pas encore saisi a un champ
+    // vide, que le libelle par defaut fait passer pour un compte sans mot de
+    // passe. Dire plutot ce qu'il attend : le champ se remplira seul.
+    function majPlaceholderMdp(ligne) {
+        var champ = ligne.querySelector('.c-mdp');
+        champ.placeholder = (ligne.dataset.derive && !champ.value)
+            ? 'renseignez le code client'
+            : 'vide = sans mot de passe';
+    }
+
     function majMotsDePasseDerives() {
         Array.prototype.forEach.call(listeComptes.querySelectorAll('.poste-compte'), function (l) {
             if (l.dataset.derive) l.querySelector('.c-mdp').value = motDePasseDerive();
+            majPlaceholderMdp(l);
         });
     }
 
